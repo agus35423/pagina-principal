@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel del Mecánico | Taller Molina Henze{% endblock %}
+
+{% block content %}
+<main class="container py-5">
+    <section class="mb-4">
+        <span class="text-uppercase text-secondary small">Taller Molina Henze · Reparaciones</span>
+        <h1 class="mt-2">Panel del mecánico</h1>
+        <p class="text-secondary">
+            {% if es_admin %}
+                Acceso de administrador: podés ver y actualizar el avance de todos los turnos.
+            {% else %}
+                Hola {{ mecanico.nombre }}. Desde aquí solo podés actualizar el avance
+                de los trabajos que tenés asignados.
+            {% endif %}
+        </p>
+    </section>
+
+    {% if turnos %}
+        <div class="row g-4">
+            {% for turno in turnos %}
+                <div class="col-12">
+                    <article class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
+                                <div>
+                                    <h2 class="h5 mb-1">Turno #{{ turno.id }} · {{ turno.vehiculo }}</h2>
+                                    <p class="text-secondary mb-1">
+                                        Patente: <strong>{{ turno.patente }}</strong>
+                                        · Servicio: {{ turno.servicio }}
+                                    </p>
+                                    <p class="text-secondary mb-0">
+                                        Fecha: {{ turno.fecha_turno|date:"d/m/Y H:i" }}
+                                        · Estado: {{ turno.get_estado_display }}
+                                    </p>
+                                </div>
+                                <div class="text-md-end">
+                                    <span class="text-secondary">Avance actual</span>
+                                    <div class="h3 mb-0">{{ turno.porcentaje_reparacion }}%</div>
+                                </div>
+                            </div>
+
+                            <div class="progress my-3" role="progressbar"
+                                 aria-label="Avance de reparación"
+                                 aria-valuenow="{{ turno.porcentaje_reparacion }}"
+                                 aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress-bar"
+                                     style="width: {{ turno.porcentaje_reparacion }}%">
+                                    {{ turno.porcentaje_reparacion }}%
+                                </div>
+                            </div>
+
+                            <form method="post"
+                                  action="{% url 'mecanico_actualizar_avance' turno.id %}"
+                                  class="row g-2 align-items-end">
+                                {% csrf_token %}
+                                <div class="col-sm-4 col-md-3">
+                                    <label for="avance-{{ turno.id }}" class="form-label">
+                                        Nuevo avance (%)
+                                    </label>
+                                    <input id="avance-{{ turno.id }}"
+                                           name="porcentaje_reparacion"
+                                           type="number"
+                                           class="form-control"
+                                           min="0"
+                                           max="100"
+                                           step="1"
+                                           value="{{ turno.porcentaje_reparacion }}"
+                                           required>
+                                </div>
+                                <div class="col-sm-auto">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa-solid fa-floppy-disk me-2"></i>
+                                        Guardar avance
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="status">
+            No tenés turnos activos asignados por el momento.
+        </div>
+    {% endif %}
+</main>
+{% endblock %}

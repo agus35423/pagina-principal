@@ -1,0 +1,74 @@
+{% extends "base.html" %} {% block title %}Responder presupuesto | Taller Molina
+Henze{% endblock %} {% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4 p-md-5">
+          <h1 class="h3 mb-3">Responder presupuesto</h1>
+
+          {% if resultado %}
+          <div
+            class="alert {% if puede_responder %}alert-info{% elif presupuesto.estado == 'aceptado' or presupuesto.estado == 'rechazado' %}alert-success{% else %}alert-secondary{% endif %}"
+          >
+            {{ resultado }}
+          </div>
+          {% endif %} {% if presupuesto %}
+          <div class="mb-4">
+            <p>
+              <strong>Vehículo:</strong>
+              {{ presupuesto.turno.vehiculo }}
+            </p>
+
+            <p>
+              <strong>Patente:</strong>
+              {{ presupuesto.turno.patente }}
+            </p>
+
+            <p>
+              <strong>Servicio:</strong>
+              {{ presupuesto.turno.servicio }}
+            </p>
+
+            <p>
+              <strong>Importe del presupuesto:</strong>
+              ${{ presupuesto.importe }}
+            </p>
+
+            {% if presupuesto.descripcion %}
+            <p>
+              <strong>Detalle:</strong>
+              {{ presupuesto.descripcion }}
+            </p>
+            {% endif %}
+          </div>
+          {% endif %} {% if puede_responder %}
+          <div class="alert alert-warning">
+            {% if decision == "aceptar" %} Vas a aceptar el presupuesto.
+            ¿Confirmás tu decisión? ¿Confirmás tu decisión? {% endif %}
+          </div>
+
+          <form method="post">
+            {% csrf_token %}
+
+            <input type="hidden" name="confirmar" value="si" />
+
+            <button
+              type="submit"
+              class="btn {% if decision == 'aceptar' %}btn-success{% else %}btn-danger{% endif %}"
+            >
+              Confirmar {% if decision == "aceptar" %}aceptación{% else
+              %}rechazo{% endif %}
+            </button>
+          </form>
+          {% else %}
+          <a href="{% url 'inicio' %}" class="btn btn-primary">
+            Volver al inicio
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

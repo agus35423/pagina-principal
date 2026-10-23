@@ -1,0 +1,172 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Crear presupuesto{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <a href="{% url 'secretario_presupuestos' %}"
+       class="btn btn-outline-secondary btn-sm mb-3">
+        ← Volver a presupuestos
+    </a>
+
+    <div class="card border-0 shadow-sm mx-auto" style="max-width: 800px;">
+        <div class="card-header bg-dark text-white py-3">
+            <h1 class="h4 mb-0">Crear presupuesto</h1>
+        </div>
+
+        <div class="card-body p-4">
+            <p class="text-muted">
+                Seleccioná el turno del cliente e ingresá los costos estimados.
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <h2 class="h5 mb-3">Datos del presupuesto</h2>
+
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}"
+                               class="form-label fw-semibold">
+                            {{ field.label }}
+                        </label>
+
+                        {{ field }}
+
+                        {% for error in field.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <hr class="my-4">
+
+                <h2 class="h5 mb-2">Repuestos estimados</h2>
+                <p class="text-muted small">
+                    Cargá el nombre, la cantidad y el precio unitario
+                    de cada repuesto.
+                </p>
+
+                {{ formset.management_form }}
+
+                {% if formset.non_form_errors %}
+                    <div class="alert alert-danger">
+                        {{ formset.non_form_errors }}
+                    </div>
+                {% endif %}
+
+                <div id="repuestos-container">
+                {% for repuesto_form in formset %}
+                    <div class="border rounded p-3 mb-3 repuesto-item">
+                        {{ repuesto_form.id }}
+
+                        {% for hidden in repuesto_form.hidden_fields %}
+                            {% if hidden.name != "id" %}
+                                {{ hidden }}
+                            {% endif %}
+                        {% endfor %}
+
+                        {% for field in repuesto_form.visible_fields %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}"
+                                       class="form-label fw-semibold">
+                                    {{ field.label }}
+                                </label>
+
+                                {{ field }}
+
+                                {% for error in field.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                </div>
+
+                <button type="button" id="agregar-repuesto"
+                        class="btn btn-outline-primary">
+                    + Agregar repuesto
+                </button>
+
+                <div id="repuesto-vacio" class="d-none">
+                    {% with repuesto_form=formset.empty_form %}
+                        <div class="border rounded p-3 mb-3 repuesto-item">
+                            {{ repuesto_form.id }}
+
+                            {% for hidden in repuesto_form.hidden_fields %}
+                                {% if hidden.name != "id" %}
+                                    {{ hidden }}
+                                {% endif %}
+                            {% endfor %}
+
+                            {% for field in repuesto_form.visible_fields %}
+                                <div class="mb-3">
+                                    <label for="{{ field.id_for_label }}"
+                                           class="form-label fw-semibold">
+                                        {{ field.label }}
+                                    </label>
+
+                                    {{ field }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endwith %}
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-envelope me-1"></i>
+                        Crear y enviar presupuesto
+                    </button>
+
+                    <a href="{% url 'secretario_presupuestos' %}"
+                       class="btn btn-outline-secondary">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const boton = document.getElementById("agregar-repuesto");
+    const contenedor = document.getElementById("repuestos-container");
+    const totalForms = document.getElementById(
+        "{{ formset.management_form.TOTAL_FORMS.id_for_label }}"
+    );
+    const plantilla = document.querySelector(
+        "#repuesto-vacio .repuesto-item"
+    );
+
+    if (!boton || !contenedor || !totalForms || !plantilla) {
+        console.error("No se encontró algún elemento del formulario de repuestos.");
+        return;
+    }
+
+    boton.addEventListener("click", function () {
+        const indice = Number(totalForms.value);
+        const nuevo = plantilla.cloneNode(true);
+
+        nuevo.innerHTML = nuevo.innerHTML.replace(/__prefix__/g, indice);
+        contenedor.appendChild(nuevo);
+        totalForms.value = indice + 1;
+    });
+});
+</script>
+{% endblock %}

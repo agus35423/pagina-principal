@@ -1,0 +1,56 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Presupuestos{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Presupuestos</h1>
+
+        <a href="{% url 'secretario_presupuesto_nuevo' %}"
+           class="btn btn-primary">
+            Crear presupuesto
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Turno</th>
+                    <th>Vehículo</th>
+                    <th>Patente</th>
+                    <th>Estado</th>
+                    <th>Mano de obra</th>
+                    <th>Total estimado</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for presupuesto in presupuestos %}
+                <tr>
+                    <td>#{{ presupuesto.turno.id }}</td>
+                    <td>{{ presupuesto.turno.vehiculo }}</td>
+                    <td>{{ presupuesto.turno.patente }}</td>
+                    <td>{{ presupuesto.get_estado_display }}</td>
+                    <td>${{ presupuesto.mano_obra_estimada }}</td>
+                    <td>${{ presupuesto.total_estimado }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">
+                        Todavía no hay presupuestos registrados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <a href="{% url 'vista_secretario' %}"
+       class="btn btn-outline-secondary">
+        Volver al panel
+    </a>
+</div>
+{% endblock %}

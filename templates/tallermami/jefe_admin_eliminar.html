@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar {{ modelo_info.verbose_name }} | Administración{% endblock %}
+
+{% block content %}
+<main class="container py-4">
+    <div class="card shadow-sm mx-auto border-danger" style="max-width: 650px;">
+        <div class="card-header bg-danger text-white">
+            <h1 class="h4 mb-0">Confirmar eliminación</h1>
+        </div>
+        <div class="card-body">
+            <p>
+                ¿Estás seguro de que querés eliminar
+                <strong>{{ objeto }}</strong>?
+            </p>
+            <p class="text-muted">
+                Esta acción puede eliminar también los datos relacionados.
+            </p>
+            <form method="post">
+                {% csrf_token %}
+                <button class="btn btn-danger" type="submit">Sí, eliminar</button>
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'jefe_admin_lista' app_label=modelo_info.app_label model_name=modelo_info.model_name %}">
+                    Cancelar
+                </a>
+            </form>
+        </div>
+    </div>
+</main>
+{% endblock %}

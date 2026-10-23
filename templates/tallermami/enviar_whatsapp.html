@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Enviar WhatsApp | Taller Molina Henze{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <span>TURNOS</span>
+        <h1>Enviar mensaje por WhatsApp</h1>
+        <p>Turno #{{ turno.id }} · {{ turno.vehiculo }}</p>
+    </div>
+</section>
+
+<section class="form-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="form-card">
+                    {% if cliente %}
+                        <p class="mb-3">
+                            Cliente: {{ cliente.nombre }} {{ cliente.apellido }}
+                            · {{ cliente.telefono }}
+                        </p>
+                    {% endif %}
+
+                    {% if not cliente or not cliente.acepta_whatsapp %}
+                        <div class="alert alert-warning">
+                            El cliente no autorizó mensajes por WhatsApp.
+                            No se enviará ningún mensaje.
+                        </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button
+                            type="submit"
+                            class="btn btn-success"
+                            {% if not cliente or not cliente.acepta_whatsapp %}
+                                disabled
+                            {% endif %}
+                        >
+                            <i class="fab fa-whatsapp me-2"></i>
+                            Enviar mensaje
+                        </button>
+                        <a
+                            href="{% url 'secretario_turnos' %}"
+                            class="btn btn-outline-secondary"
+                        >
+                            Volver a turnos
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel del Jefe de Taller{% endblock %}
+
+{% block content %}
+<main class="container py-4 jefe-admin-page">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <span class="jefe-admin-eyebrow">TALLER MOLINA HENZE</span>
+            <h1 class="h2 mb-1">Panel del Jefe de Taller</h1>
+            <p class="text-muted mb-0">
+                Administrá los datos y las operaciones del taller.
+            </p>
+        </div>
+        <a href="{% url 'jefe_admin_inicio' %}" class="btn btn-primary jefe-admin-primary-action">
+            <i class="fa-solid fa-gauge-high me-2"></i>
+            Administración completa
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <a href="{% url 'jefe_trabajos' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm jefe-panel-card">
+                    <div class="card-body">
+                        <span class="jefe-admin-model-icon"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+                        <h2 class="h5">Trabajos y servicios</h2>
+                        <p class="text-muted mb-0">Consultar trabajos y precios.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="{% url 'jefe_trabajadores' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm jefe-panel-card">
+                    <div class="card-body">
+                        <span class="jefe-admin-model-icon"><i class="fa-solid fa-people-group"></i></span>
+                        <h2 class="h5">Trabajadores</h2>
+                        <p class="text-muted mb-0">Consultar el personal del taller.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="{% url 'jefe_clientes' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm jefe-panel-card">
+                    <div class="card-body">
+                        <span class="jefe-admin-model-icon"><i class="fa-solid fa-users"></i></span>
+                        <h2 class="h5">Clientes</h2>
+                        <p class="text-muted mb-0">Consultar clientes registrados.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="{% url 'jefe_turnos' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm jefe-panel-card">
+                    <div class="card-body">
+                        <span class="jefe-admin-model-icon"><i class="fa-solid fa-calendar-check"></i></span>
+                        <h2 class="h5">Turnos</h2>
+                        <p class="text-muted mb-0">Buscar turnos y exportarlos a Excel.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</main>
+{% endblock %}

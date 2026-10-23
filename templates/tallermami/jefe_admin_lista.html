@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ modelo_info.verbose_name_plural|capfirst }} | Administración{% endblock %}
+
+{% block content %}
+<main class="container py-4 jefe-admin-page">
+    <a href="{% url 'jefe_admin_inicio' %}"
+       class="btn btn-outline-secondary btn-sm mb-3 jefe-admin-back">
+        <i class="fa-solid fa-arrow-left me-1"></i>
+        Volver a administración
+    </a>
+
+    {% if modelo_info.model_name == "turno" %}
+        <section class="jefe-turnos-hero mb-4">
+            <div class="jefe-turnos-hero-copy">
+                <span class="jefe-admin-eyebrow">CENTRO DE OPERACIONES</span>
+                <h1>Gestión de turnos</h1>
+                <p>Consultá la agenda, el estado de cada vehículo y actualizá sus datos.</p>
+            </div>
+            <div class="jefe-turnos-total">
+                <span>Turnos registrados</span>
+                <strong>{{ pagina.paginator.count }}</strong>
+            </div>
+            <a class="btn btn-light jefe-turnos-create"
+               href="{% url 'jefe_admin_nuevo' app_label=modelo_info.app_label model_name=modelo_info.model_name %}">
+                <i class="fa-solid fa-plus me-2"></i>
+                Nuevo turno
+            </a>
+        </section>
+    {% else %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 jefe-admin-page-heading">
+            <div>
+                <span class="jefe-admin-eyebrow">GESTIÓN DEL TALLER</span>
+                <h1 class="h2 mb-1">{{ modelo_info.verbose_name_plural|capfirst }}</h1>
+                <p class="text-muted mb-0">{{ pagina.paginator.count }} registro(s)</p>
+            </div>
+            <a class="btn btn-primary"
+               href="{% url 'jefe_admin_nuevo' app_label=modelo_info.app_label model_name=modelo_info.model_name %}">
+                Crear {{ modelo_info.verbose_name }}
+            </a>
+        </div>
+    {% endif %}
+
+    <form method="get" class="row g-2 mb-3 {% if modelo_info.model_name == 'turno' %}jefe-turnos-search{% endif %}">
+        <div class="{% if modelo_info.model_name == 'turno' %}col-12 col-md{% else %}col-sm-8 col-md-6{% endif %}">
+            <label class="visually-hidden" for="busqueda-admin">Buscar</label>
+            <input id="busqueda-admin" class="form-control" type="search"
+                   name="q" value="{{ busqueda }}"
+                   placeholder="{% if modelo_info.model_name == 'turno' %}Buscar por cliente, patente, vehículo o estado{% else %}Buscar en {{ modelo_info.verbose_name_plural }}{% endif %}">
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" type="submit">
+                <i class="fa-solid fa-magnifying-glass me-1"></i>
+                Buscar
+            </button>
+        </div>
+        {% if busqueda %}
+            <div class="col-auto">
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'jefe_admin_lista' app_label=modelo_info.app_label model_name=modelo_info.model_name %}">
+                    Limpiar
+                </a>
+            </div>
+        {% endif %}
+    </form>
+
+    <form method="post">
+        {% csrf_token %}
+        {% if acciones %}
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-3 {% if modelo_info.model_name == 'turno' %}jefe-turnos-bulk-actions{% endif %}">
+                <label class="visually-hidden" for="accion-admin">Acción masiva</label>
+                <select id="accion-admin" class="form-select w-auto" name="accion" required>
+                    <option value="">Acción para los seleccionados</option>
+                    {% for accion in acciones %}
+                        <option value="{{ accion.nombre }}">{{ accion.etiqueta }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn {% if modelo_info.model_name == 'turno' %}btn-outline-secondary{% else %}btn-outline-primary{% endif %}" type="submit">
+                    Ejecutar
+                </button>
+            </div>
+        {% endif %}
+
+        <div class="card shadow-sm jefe-admin-table-card {% if modelo_info.model_name == 'turno' %}jefe-turnos-list-card{% endif %}">
+            <div class="table-responsive">
+                {% if modelo_info.model_name == "turno" %}
+                    <table class="table table-hover align-middle mb-0 jefe-admin-table jefe-turnos-table">
+                        <thead>
+                            <tr>
+                                {% if acciones %}<th scope="col" class="text-center">Sel.</th>{% endif %}
+                                <th scope="col">Turno y cliente</th>
+                                <th scope="col">Vehículo</th>
+                                <th scope="col">Servicio</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Estado / avance</th>
+                                <th scope="col" class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fila in filas %}
+                                {% with turno=fila.objeto %}
+                                    <tr>
+                                        {% if acciones %}
+                                            <td class="text-center">
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="seleccionado"
+                                                       value="{{ turno.pk }}"
+                                                       aria-label="Seleccionar {{ turno }}">
+                                            </td>
+                                        {% endif %}
+                                        <td>
+                                            <span class="jefe-turno-id">#{{ turno.pk }}</span>
+                                            <strong class="jefe-turno-client">
+                                                {% if turno.usuario %}
+                                                    {{ turno.usuario.get_full_name|default:turno.usuario.username }}
+                                                {% else %}
+                                                    Sin usuario asociado
+                                                {% endif %}
+                                            </strong>
+                                            <span class="jefe-turno-plate">
+                                                <i class="fa-solid fa-car me-1"></i>
+                                                {{ turno.patente }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if turno.marca or turno.modelo %}
+                                                <strong class="d-block">
+                                                    {{ turno.marca }} {{ turno.modelo }}
+                                                </strong>
+                                            {% else %}
+                                                <strong class="d-block">{{ turno.vehiculo }}</strong>
+                                            {% endif %}
+                                            <span class="jefe-turno-muted">
+                                                {% if turno.anio %}
+                                                    Año {{ turno.anio }}
+                                                {% elif turno.marca or turno.modelo %}
+                                                    {{ turno.vehiculo }}
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td>{{ turno.servicio|default:"—" }}</td>
+                                        <td class="jefe-turno-date">
+                                            <strong>{{ turno.fecha_turno|date:"d/m/Y" }}</strong>
+                                            <span>{{ turno.fecha_turno|date:"H:i" }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="jefe-turno-status jefe-turno-status-{{ turno.estado }}">
+                                                {{ turno.get_estado_display }}
+                                            </span>
+                                            <div class="jefe-turno-progress" role="progressbar"
+                                                 aria-label="Avance de reparación"
+                                                 aria-valuenow="{{ turno.porcentaje_reparacion }}"
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                <span style="width: {{ turno.porcentaje_reparacion }}%"></span>
+                                            </div>
+                                            <span class="jefe-turno-progress-label">
+                                                {{ turno.porcentaje_reparacion }}% de avance
+                                            </span>
+                                        </td>
+                                        <td class="text-end text-nowrap">
+                                            <a class="btn btn-sm btn-primary jefe-turno-edit"
+                                               href="{% url 'jefe_admin_editar' app_label=modelo_info.app_label model_name=modelo_info.model_name object_id=turno.pk %}"
+                                               aria-label="Ver y editar turno {{ turno.pk }}"
+                                               title="Ver y editar">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </a>
+                                            <a class="btn btn-sm btn-outline-danger jefe-turno-delete"
+                                               href="{% url 'jefe_admin_eliminar' app_label=modelo_info.app_label model_name=modelo_info.model_name object_id=turno.pk %}"
+                                               aria-label="Eliminar turno {{ turno.pk }}"
+                                               title="Eliminar">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endwith %}
+                            {% empty %}
+                                <tr>
+                                    <td colspan="99" class="text-center text-muted py-5">
+                                        No hay turnos para mostrar.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <table class="table table-hover align-middle mb-0 jefe-admin-table">
+                        <thead>
+                            <tr>
+                                {% if acciones %}<th scope="col">Seleccionar</th>{% endif %}
+                                {% for columna in columnas %}
+                                    <th scope="col">{{ columna.etiqueta|capfirst }}</th>
+                                {% endfor %}
+                                <th scope="col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fila in filas %}
+                                <tr>
+                                    {% if acciones %}
+                                        <td>
+                                            <input class="form-check-input" type="checkbox"
+                                                   name="seleccionado"
+                                                   value="{{ fila.objeto.pk }}"
+                                                   aria-label="Seleccionar {{ fila.objeto }}">
+                                        </td>
+                                    {% endif %}
+                                    {% for valor in fila.valores %}
+                                        <td>{{ valor|default:"—" }}</td>
+                                    {% endfor %}
+                                    <td class="text-nowrap">
+                                        <a class="btn btn-sm btn-outline-primary"
+                                           href="{% url 'jefe_admin_editar' app_label=modelo_info.app_label model_name=modelo_info.model_name object_id=fila.objeto.pk %}">
+                                            Ver / editar
+                                        </a>
+                                        <a class="btn btn-sm btn-outline-danger"
+                                           href="{% url 'jefe_admin_eliminar' app_label=modelo_info.app_label model_name=modelo_info.model_name object_id=fila.objeto.pk %}">
+                                            Eliminar
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="99" class="text-center text-muted py-4">
+                                        No hay registros para mostrar.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+
+    {% if pagina.has_other_pages %}
+        <nav class="mt-3" aria-label="Paginación">
+            <ul class="pagination">
+                {% if pagina.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ busqueda|urlencode }}&page={{ pagina.previous_page_number }}">Anterior</a>
+                    </li>
+                {% endif %}
+                <li class="page-item disabled">
+                    <span class="page-link">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+                </li>
+                {% if pagina.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ busqueda|urlencode }}&page={{ pagina.next_page_number }}">Siguiente</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</main>
+{% endblock %}

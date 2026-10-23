@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if cambio_contrasena %}Cambiar contraseña{% elif cambio %}Editar{% else %}Crear{% endif %}
+    {{ modelo_info.verbose_name }} | Administración
+{% endblock %}
+
+{% block content %}
+<main class="container py-4 jefe-admin-page">
+    <a href="{% url 'jefe_admin_lista' app_label=modelo_info.app_label model_name=modelo_info.model_name %}"
+       class="btn btn-outline-secondary btn-sm mb-3">
+        ← Volver a {{ modelo_info.verbose_name_plural }}
+    </a>
+
+    <div class="card shadow-sm mx-auto jefe-admin-form-card" style="max-width: 900px;">
+        <div class="card-header jefe-admin-card-header">
+            <h1 class="h4 mb-0">
+                {% if cambio_contrasena %}
+                    Cambiar contraseña
+                {% elif cambio %}
+                    Ver / editar {{ modelo_info.verbose_name }}
+                {% else %}
+                    Crear {{ modelo_info.verbose_name }}
+                {% endif %}
+            </h1>
+            {% if objeto %}
+                <p class="text-muted mb-0 mt-1">{{ objeto }}</p>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if objeto and modelo_info.model_name == "user" and not cambio_contrasena %}
+                <a class="btn btn-outline-warning mb-3"
+                   href="{% url 'jefe_admin_contrasena' object_id=objeto.pk %}">
+                    Cambiar contraseña
+                </a>
+            {% endif %}
+
+            {{ form.media }}
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+                {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                {% for field in form.visible_fields %}
+                    <div class="mb-3 {% if field.name == 'estado' and modelo_info.model_name == 'turno' %}jefe-status-field{% endif %}">
+                        {% if field.name == "estado" and modelo_info.model_name == "turno" %}
+                            <div class="jefe-status-field-heading">
+                                <span class="jefe-status-icon">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </span>
+                                <div>
+                                    <label class="form-label fw-semibold mb-1"
+                                           for="{{ field.id_for_label }}">
+                                        Estado del turno
+                                    </label>
+                                    <p class="text-muted small mb-0">
+                                        Seleccioná la etapa actual del vehículo.
+                                    </p>
+                                </div>
+                            </div>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% else %}
+                        {% if field.field.widget.input_type == "checkbox" %}
+                            <div class="form-check">
+                                {{ field }}
+                                <label class="form-check-label" for="{{ field.id_for_label }}">
+                                    {{ field.label }}
+                                </label>
+                            </div>
+                        {% else %}
+                            <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+                        {% endif %}
+                        {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text|safe }}</div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                {% if campos_solo_lectura %}
+                    <hr>
+                    <h2 class="h6">Información de solo lectura</h2>
+                    {% for campo in campos_solo_lectura %}
+                        <div class="mb-2">
+                            <strong>{{ campo.etiqueta|capfirst }}:</strong>
+                            {{ campo.valor|default:"—" }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-primary" type="submit">Guardar</button>
+                    <a class="btn btn-outline-secondary"
+                       href="{% url 'jefe_admin_lista' app_label=modelo_info.app_label model_name=modelo_info.model_name %}">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+{% endblock %}

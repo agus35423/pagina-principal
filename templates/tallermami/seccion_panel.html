@@ -1,0 +1,459 @@
+
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container py-4 {% if panel == 'jefe' and seccion == 'turnos' %}jefe-admin-page{% endif %}">
+
+    {% if panel == "jefe" %}
+        <a href="{% url 'vista_jefe_taller' %}"
+           class="btn btn-outline-secondary btn-sm mb-3">
+            ← Volver al panel
+        </a>
+    {% else %}
+        <a href="{% url 'vista_secretario' %}"
+           class="btn btn-outline-secondary btn-sm mb-3">
+            ← Volver al panel
+        </a>
+    {% endif %}
+
+    {% if panel == "jefe" and seccion == "turnos" %}
+        <div class="jefe-admin-hero mb-4">
+            <span class="jefe-admin-eyebrow">OPERACIONES</span>
+            <h1>{{ titulo }}</h1>
+            <p>Revisá el estado de cada vehículo y abrí su ficha para actualizarlo.</p>
+        </div>
+    {% else %}
+        <h1 class="mb-4">{{ titulo }}</h1>
+    {% endif %}
+
+    {# ================= TRABAJOS ================= #}
+    {% if seccion == "trabajos" %}
+
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Precio estimado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trabajo in trabajos %}
+                        <tr>
+                            <td>{{ trabajo.nombre }}</td>
+                            <td>{{ trabajo.descripcion }}</td>
+                            <td>
+                                {% if trabajo.precio_estimado != None %}
+                                    ${{ trabajo.precio_estimado }}
+                                {% else %}
+                                    Sin definir
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">
+                                No hay trabajos registrados.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+    {# ================= TRABAJADORES ================= #}
+    {% elif seccion == "trabajadores" %}
+
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Especialidad</th>
+                        <th>Teléfono</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trabajador in trabajadores %}
+                        <tr>
+                            <td>{{ trabajador.nombre }}</td>
+                            <td>{{ trabajador.apellido }}</td>
+                            <td>{{ trabajador.especialidad|default:"Sin especificar" }}</td>
+                            <td>{{ trabajador.telefono|default:"Sin teléfono" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">
+                                No hay trabajadores registrados.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {# ================= PRESUPUESTOS ================= #}
+
+{# ================= PRESUPUESTOS ================= #}
+{% elif seccion == "presupuestos" %}
+
+<div class="d-flex justify-content-end mb-3">
+    <a href="{% url 'secretario_presupuesto_nuevo' %}"
+       class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>
+        Crear y enviar presupuesto
+    </a>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <h2 class="h5 mb-1">Presupuestos del taller</h2>
+        <p class="text-muted mb-0">
+            Consultá los presupuestos asociados a los turnos registrados.
+        </p>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover table-bordered align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>N.º</th>
+                <th>Cliente</th>
+                <th>DNI</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Año</th>
+                <th>Patente</th>
+                <th>Fecha del turno</th>
+                <th>Avance</th>
+                <th>Mano de obra</th>
+                <th>Total estimado</th>
+                <th>Estado</th>
+                <th>Enviado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for presupuesto in presupuestos %}
+                <tr>
+                    <td>{{ presupuesto.id }}</td>
+
+                    <td>
+                        {% if presupuesto.turno.usuario %}
+                            {% if presupuesto.turno.usuario.get_full_name %}
+                                {{ presupuesto.turno.usuario.get_full_name }}
+                            {% else %}
+                                {{ presupuesto.turno.usuario.username }}
+                            {% endif %}
+                        {% else %}
+                            Sin usuario asociado
+                        {% endif %}
+                    </td>
+
+                    <td>{{ presupuesto.cliente_dni|default:"—" }}</td>
+                    <td>{{ presupuesto.turno.marca|default:"—" }}</td>
+                    <td>{{ presupuesto.turno.modelo|default:presupuesto.turno.vehiculo }}</td>
+                    <td>{{ presupuesto.turno.anio|default:"—" }}</td>
+                    <td>{{ presupuesto.turno.patente }}</td>
+                    <td>{{ presupuesto.turno.fecha_turno|date:"d/m/Y H:i" }}</td>
+                    <td>{{ presupuesto.turno.porcentaje_reparacion }}%</td>
+
+                    <td>
+                        ${{ presupuesto.mano_obra_estimada|floatformat:2 }}
+                    </td>
+
+                    <td>
+                        ${{ presupuesto.total_estimado|floatformat:2 }}
+                    </td>
+
+                    <td>
+                        {% if presupuesto.estado == "pendiente" %}
+                            <span class="badge text-bg-warning">Pendiente</span>
+                        {% elif presupuesto.estado == "aceptado" %}
+                            <span class="badge text-bg-success">Aceptado</span>
+                        {% elif presupuesto.estado == "rechazado" %}
+                            <span class="badge text-bg-danger">Rechazado</span>
+                        {% else %}
+                            {{ presupuesto.get_estado_display }}
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if presupuesto.fecha_envio %}
+                            <span class="badge text-bg-success">Enviado</span>
+                        {% else %}
+                            <span class="badge text-bg-secondary">No enviado</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if presupuesto.estado == "aceptado" %}
+                            {% if presupuesto.final_enviado %}
+                                <span class="badge text-bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    Final enviado
+                                </span>
+                            {% else %}
+                                <a href="{% url 'secretario_presupuesto_final' presupuesto.id %}"
+                                   class="btn btn-success btn-sm">
+                                    <i class="fas fa-file-invoice-dollar me-1"></i>
+                                    Cargar presupuesto final
+                                </a>
+                            {% endif %}
+
+                        {% elif presupuesto.estado == "pendiente" %}
+                            <span class="text-muted small">
+                                Esperando respuesta del cliente
+                            </span>
+
+                        {% elif presupuesto.estado == "rechazado" %}
+                            <span class="text-muted small">
+                                El cliente lo rechazó
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+
+            {% empty %}
+                <tr>
+                    <td colspan="14" class="text-center py-4">
+                        <i class="fas fa-file-invoice-dollar fa-2x mb-2"></i>
+                        <p class="mb-0">
+                            Todavía no hay presupuestos registrados.
+                        </p>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+    {# ================= CLIENTES ================= #}
+   
+    {% elif seccion == "clientes" %}
+
+        {% if panel == "secretario" %}
+            <div class="mb-3">
+                <a href="{% url 'secretario_cliente_nuevo' %}"
+                   class="btn btn-primary">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Crear cliente
+                </a>
+            </div>
+        {% endif %}
+
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>DNI</th>
+                        <th>Correo electrónico</th>
+                        <th>Teléfono</th>
+                        {% if panel == "secretario" or panel == "jefe" %}
+                            <th>Acciones</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in clientes %}
+                        <tr>
+                            <td>{{ cliente.nombre }}</td>
+                            <td>{{ cliente.apellido }}</td>
+                            <td>{{ cliente.dni|default:"—" }}</td>
+                            <td>{{ cliente.email }}</td>
+                            <td>{{ cliente.telefono }}</td>
+
+                            {% if panel == "secretario" %}
+                                <td>
+                                    <a href="{% url 'secretario_cliente_editar' cliente.id %}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit me-1"></i>
+                                        Editar
+                                    </a>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            {% if panel == "secretario" %}
+                                <td colspan="6" class="text-center">
+                            {% else %}
+                                <td colspan="5" class="text-center">
+                            {% endif %}
+                                No hay clientes registrados.
+                                </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {# ================= TURNOS ================= #}
+    {% elif seccion == "turnos" %}
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3 {% if panel == 'jefe' %}jefe-turnos-toolbar{% endif %}">
+            <p class="text-muted mb-0">
+                Turnos encontrados: {{ turnos|length }}
+            </p>
+
+            <a href="{% url 'descargar_excel_turnos' %}?buscar={{ busqueda|urlencode }}"
+               class="btn btn-success">
+                <i class="fas fa-file-excel me-2"></i>
+                Exportar a Excel
+            </a>
+        </div>
+
+        <form method="get" class="row g-2 mb-4 {% if panel == 'jefe' %}jefe-turnos-search{% endif %}">
+            <div class="col-md-9">
+                <input
+                    type="text"
+                    name="buscar"
+                    class="form-control"
+                    placeholder="Buscar por nombre, apellido, vehículo o patente..."
+                    value="{{ busqueda|default:'' }}"
+                >
+            </div>
+
+            <div class="col-md-3 d-grid">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>
+                    Buscar
+                </button>
+            </div>
+
+            {% if busqueda %}
+                <div class="col-12">
+                    {% if panel == "jefe" %}
+                        <a href="{% url 'jefe_turnos' %}"
+                           class="btn btn-outline-secondary btn-sm">
+                            Limpiar búsqueda
+                        </a>
+                    {% else %}
+                        <a href="{% url 'secretario_turnos' %}"
+                           class="btn btn-outline-secondary btn-sm">
+                            Limpiar búsqueda
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </form>
+
+        <div class="{% if panel == 'jefe' %}jefe-turnos-table-wrap{% endif %}">
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered align-middle {% if panel == 'jefe' %}jefe-admin-table{% endif %}">
+                <thead class="{% if panel == 'jefe' %}{% else %}table-dark{% endif %}">
+                    <tr>
+                        <th>Cliente</th>
+                        {% if panel == "secretario" %}
+                            <th>DNI</th>
+                        {% endif %}
+                        <th>Marca</th>
+                        <th>Modelo</th>
+                        <th>Año</th>
+                        <th>Patente</th>
+                        <th>Servicio</th>
+                        <th>Trabajador</th>
+                        <th>Fecha y hora</th>
+                        <th>Estado</th>
+                        <th>Avance</th>
+                        {% if panel == "secretario" or panel == "jefe" %}
+                            <th>Acciones</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for turno in turnos %}
+                        <tr>
+                            <td>
+                                {% if turno.usuario %}
+                                    {% if turno.usuario.get_full_name %}
+                                        {{ turno.usuario.get_full_name }}
+                                    {% else %}
+                                        {{ turno.usuario.username }}
+                                    {% endif %}
+                                {% else %}
+                                    Sin usuario asociado
+                                {% endif %}
+                            </td>
+                            {% if panel == "secretario" %}
+                                <td>{{ turno.cliente_dni|default:"—" }}</td>
+                            {% endif %}
+                            <td>{{ turno.marca|default:"—" }}</td>
+                            <td>{{ turno.modelo|default:turno.vehiculo }}</td>
+                            <td>{{ turno.anio|default:"—" }}</td>
+                            <td>{{ turno.patente }}</td>
+                            <td>{{ turno.servicio }}</td>
+                            <td>{{ turno.trabajador|default:"Sin asignar" }}</td>
+                            <td>{{ turno.fecha_turno|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <span class="badge rounded-pill text-bg-primary jefe-state-badge">
+                                    {{ turno.get_estado_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="progress" role="progressbar"
+                                     aria-valuenow="{{ turno.porcentaje_reparacion }}"
+                                     aria-valuemin="0" aria-valuemax="100"
+                                     aria-label="Avance de reparación">
+                                    <div class="progress-bar"
+                                         style="width: {{ turno.porcentaje_reparacion }}%">
+                                        {{ turno.porcentaje_reparacion }}%
+                                    </div>
+                                </div>
+                            </td>
+
+                            {% if panel == "secretario" %}
+                                <td>
+                                    <a href="{% url 'secretario_turno_editar' turno.id %}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit me-1"></i>
+                                        Editar
+                                    </a>
+                                    <a href="{% url 'secretario_turno_whatsapp' turno.id %}"
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="fab fa-whatsapp me-1"></i>
+                                        WhatsApp
+                                    </a>
+                                </td>
+                            {% elif panel == "jefe" %}
+                                <td class="text-nowrap">
+                                    <a href="{% url 'jefe_admin_editar' app_label='tallermami' model_name='turno' object_id=turno.pk %}"
+                                       class="btn btn-sm btn-primary">
+                                        <i class="fa-solid fa-pen-to-square me-1"></i>
+                                        Editar
+                                    </a>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            {% if panel == "secretario" %}
+                                <td colspan="12" class="text-center">
+                            {% elif panel == "jefe" %}
+                                <td colspan="11" class="text-center">
+                            {% else %}
+                                <td colspan="10" class="text-center">
+                            {% endif %}
+                                No se encontraron turnos.
+                                </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        </div>
+
+    {% endif %}
+
+</div>
+{% endblock %}

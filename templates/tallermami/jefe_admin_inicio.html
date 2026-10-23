@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Administración | Jefe de Taller{% endblock %}
+
+{% block content %}
+<main class="container py-4 jefe-admin-page">
+    <a href="{% url 'vista_jefe_taller' %}"
+       class="btn btn-outline-secondary btn-sm mb-3">
+        ← Volver al panel
+    </a>
+    <div class="jefe-admin-hero mb-4">
+        <span class="jefe-admin-eyebrow">TALLER MOLINA HENZE</span>
+        <h1>Administración completa</h1>
+        <p>Gestioná los datos, el equipo y la operación del taller desde un solo lugar.</p>
+    </div>
+
+    <div class="row g-3 mt-2">
+        {% for modelo in modelos %}
+            <div class="col-sm-6 col-lg-4">
+                <a class="text-decoration-none"
+                   href="{% url 'jefe_admin_lista' app_label=modelo.app_label model_name=modelo.model_name %}">
+                    <div class="card h-100 shadow-sm jefe-admin-model-card">
+                        <div class="card-body">
+                            <span class="jefe-admin-model-icon">
+                                {% if modelo.model_name == "turno" %}
+                                    <i class="fa-solid fa-calendar-check"></i>
+                                {% elif modelo.model_name == "cliente" %}
+                                    <i class="fa-solid fa-users"></i>
+                                {% elif modelo.model_name == "trabajador" %}
+                                    <i class="fa-solid fa-people-group"></i>
+                                {% elif modelo.model_name == "trabajo" %}
+                                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-sliders"></i>
+                                {% endif %}
+                            </span>
+                            <h2 class="h5 text-body">
+                                {{ modelo.verbose_name_plural|capfirst }}
+                            </h2>
+                            <p class="text-muted mb-0">
+                                {{ modelo.app_verbose_name }}
+                            </p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No hay modelos registrados para administrar.
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</main>
+{% endblock %}
