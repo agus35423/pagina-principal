@@ -1804,6 +1804,36 @@ img {
     font-size: 19px;
 }
 
+.jefe-admin-stats-card {
+    border: 1px solid #e5eaf0;
+    border-radius: 16px;
+}
+
+.jefe-admin-stats-card .card-body {
+    padding: 24px;
+}
+
+.jefe-admin-stats-card h3 {
+    font-weight: 750;
+}
+
+.jefe-admin-stat-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid #edf1f5;
+}
+
+.jefe-admin-stat-row:last-child {
+    border-bottom: 0;
+}
+
+.jefe-admin-stat-row strong {
+    flex-shrink: 0;
+    color: #123c64;
+}
+
 .jefe-admin-primary-action {
     padding: 11px 18px;
     border-radius: 10px;

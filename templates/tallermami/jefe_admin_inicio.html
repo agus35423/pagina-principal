@@ -14,6 +14,62 @@
         <p>Gestioná los datos, el equipo y la operación del taller desde un solo lugar.</p>
     </div>
 
+    <section class="mb-4" aria-labelledby="estadisticas-titulo">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+            <div>
+                <span class="jefe-admin-eyebrow">RENDIMIENTO DEL TALLER</span>
+                <h2 id="estadisticas-titulo" class="h3 mb-1">Estadísticas</h2>
+                <p class="text-muted mb-0">Basadas en las órdenes y los trabajos registrados.</p>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <section class="card h-100 shadow-sm jefe-admin-stats-card"
+                         aria-labelledby="clientes-recurrentes-titulo">
+                    <div class="card-body">
+                        <h3 id="clientes-recurrentes-titulo" class="h5">
+                            <i class="fa-solid fa-users me-2" aria-hidden="true"></i>
+                            Clientes más recurrentes
+                        </h3>
+                        <p class="text-muted small">Cantidad de órdenes de trabajo por cliente.</p>
+                        {% for cliente in clientes_recurrentes %}
+                            <div class="jefe-admin-stat-row">
+                                <span>{{ forloop.counter }}. {{ cliente.nombre }} {{ cliente.apellido }}</span>
+                                <strong>{{ cliente.cantidad_trabajos }}
+                                    {% if cliente.cantidad_trabajos == 1 %}orden{% else %}órdenes{% endif %}
+                                </strong>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted mb-0">Todavía no hay órdenes de trabajo registradas.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+            <div class="col-lg-6">
+                <section class="card h-100 shadow-sm jefe-admin-stats-card"
+                         aria-labelledby="trabajadores-destacados-titulo">
+                    <div class="card-body">
+                        <h3 id="trabajadores-destacados-titulo" class="h5">
+                            <i class="fa-solid fa-screwdriver-wrench me-2" aria-hidden="true"></i>
+                            Trabajadores con más trabajos
+                        </h3>
+                        <p class="text-muted small">Cantidad de tareas realizadas y registradas por trabajador.</p>
+                        {% for trabajador in trabajadores_destacados %}
+                            <div class="jefe-admin-stat-row">
+                                <span>{{ forloop.counter }}. {{ trabajador.nombre }} {{ trabajador.apellido }}</span>
+                                <strong>{{ trabajador.cantidad_trabajos }}
+                                    {% if trabajador.cantidad_trabajos == 1 %}trabajo{% else %}trabajos{% endif %}
+                                </strong>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted mb-0">Todavía no hay trabajos realizados registrados.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+        </div>
+    </section>
+
     <div class="row g-3 mt-2">
         {% for modelo in modelos %}
             <div class="col-sm-6 col-lg-4">

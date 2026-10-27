@@ -23,7 +23,7 @@ from django.core.exceptions import (
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import Count, OuterRef, Q, Subquery
 from django.forms import modelform_factory
 from django.http import HttpResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
@@ -1221,10 +1221,26 @@ def jefe_admin_inicio(request):
             str(model._meta.verbose_name_plural),
         ),
     )
+    clientes_recurrentes = (
+        Cliente.objects.annotate(cantidad_trabajos=Count("ordenes_trabajo"))
+        .filter(cantidad_trabajos__gt=0)
+        .order_by("-cantidad_trabajos", "apellido", "nombre")[:5]
+    )
+    trabajadores_destacados = (
+        Trabajador.objects.annotate(
+            cantidad_trabajos=Count("trabajos_realizados")
+        )
+        .filter(cantidad_trabajos__gt=0)
+        .order_by("-cantidad_trabajos", "apellido", "nombre")[:5]
+    )
     return render(
         request,
         "tallermami/jefe_admin_inicio.html",
-        {"modelos": [_modelo_contexto(model) for model in modelos]},
+        {
+            "modelos": [_modelo_contexto(model) for model in modelos],
+            "clientes_recurrentes": clientes_recurrentes,
+            "trabajadores_destacados": trabajadores_destacados,
+        },
     )
 
 

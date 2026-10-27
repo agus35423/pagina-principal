@@ -17,10 +17,13 @@ from .forms import ClienteForm, SolicitarTurnoForm, TurnoAdminForm, TurnoForm
 from .models import (
     Cliente,
     Disponibilidad,
+    OrdenTrabajo,
     OfertaTurno,
     Trabajador,
     Trabajo,
+    TrabajoRealizado,
     Turno,
+    Vehiculo,
 )
 from .utils import (
     enviar_correo_taller,
@@ -47,6 +50,86 @@ class AdministracionJefeTallerTests(TestCase):
         self.assertContains(response, "Trabajos")
         self.assertContains(response, "Usuarios")
         self.assertContains(response, "Grupos")
+
+    def test_panel_muestra_estadisticas_de_clientes_y_trabajadores(self):
+        cliente_frecuente = Cliente.objects.create(
+            nombre="Ana",
+            apellido="Frecuente",
+            email="ana@example.com",
+            telefono="111",
+        )
+        otro_cliente = Cliente.objects.create(
+            nombre="Luis",
+            apellido="Cliente",
+            email="luis@example.com",
+            telefono="222",
+        )
+        trabajo = Trabajo.objects.create(nombre="Mantenimiento")
+        mecanico_destacado = Trabajador.objects.create(
+            nombre="Marta",
+            apellido="Destacada",
+        )
+        otro_mecanico = Trabajador.objects.create(
+            nombre="Juan",
+            apellido="Mecanico",
+        )
+
+        for numero, cliente in enumerate(
+            [cliente_frecuente, cliente_frecuente, otro_cliente],
+            start=1,
+        ):
+            vehiculo = Vehiculo.objects.create(
+                marca="Ford",
+                modelo="Focus",
+                anio=2018,
+                patente=f"AB123C{numero}",
+                cliente=cliente,
+            )
+            orden = OrdenTrabajo.objects.create(
+                vehiculo=vehiculo,
+                cliente=cliente,
+                servicio=trabajo,
+                mecanico=mecanico_destacado,
+                fecha_ingreso=date.today(),
+                estado="finalizado",
+            )
+            TrabajoRealizado.objects.create(
+                orden_trabajo=orden,
+                descripcion=f"Trabajo {numero}",
+                fecha=date.today(),
+                mecanico=(
+                    mecanico_destacado if numero < 3 else otro_mecanico
+                ),
+            )
+            if numero == 1:
+                TrabajoRealizado.objects.create(
+                    orden_trabajo=orden,
+                    descripcion="Segundo trabajo",
+                    fecha=date.today(),
+                    mecanico=mecanico_destacado,
+                )
+
+        response = self.client.get(reverse("jefe_admin_inicio"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["clientes_recurrentes"][0],
+            cliente_frecuente,
+        )
+        self.assertEqual(
+            response.context["clientes_recurrentes"][0].cantidad_trabajos,
+            2,
+        )
+        self.assertEqual(
+            response.context["trabajadores_destacados"][0],
+            mecanico_destacado,
+        )
+        self.assertEqual(
+            response.context["trabajadores_destacados"][0].cantidad_trabajos,
+            3,
+        )
+        self.assertContains(response, "Clientes más recurrentes")
+        self.assertContains(response, "Trabajadores con más trabajos")
 
     def test_panel_principal_enlaza_a_la_administracion(self):
         response = self.client.get(reverse("vista_jefe_taller"))
