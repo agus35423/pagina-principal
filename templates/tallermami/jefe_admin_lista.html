@@ -147,12 +147,7 @@
                                             <span class="jefe-turno-status jefe-turno-status-{{ turno.estado }}">
                                                 {{ turno.get_estado_display }}
                                             </span>
-                                            <div class="jefe-turno-progress" role="progressbar"
-                                                 aria-label="Avance de reparación"
-                                                 aria-valuenow="{{ turno.porcentaje_reparacion }}"
-                                                 aria-valuemin="0" aria-valuemax="100">
-                                                <span style="width: {{ turno.porcentaje_reparacion }}%"></span>
-                                            </div>
+                                            {% include "tallermami/_barra_avance.html" with turno=turno %}
                                             <span class="jefe-turno-progress-label">
                                                 {{ turno.porcentaje_reparacion }}% de avance
                                             </span>

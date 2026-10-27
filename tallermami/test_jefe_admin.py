@@ -192,6 +192,8 @@ class AdministracionJefeTallerTests(TestCase):
         self.assertContains(response, "Turnos registrados")
         self.assertContains(response, "Estado / avance")
         self.assertContains(response, "En reparación")
+        self.assertContains(response, 'class="repair-progress-car"')
+        self.assertContains(response, 'aria-valuenow="45"')
         self.assertContains(response, "45% de avance")
         self.assertContains(
             response,

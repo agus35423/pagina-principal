@@ -82,12 +82,7 @@ s
           </div>
 
           <div class="turn-progress">
-            <div class="progress">
-              <div
-                class="progress-bar"
-                style="width: {{ turno.porcentaje_reparacion }}%;"
-              ></div>
-            </div>
+            {% include "tallermami/_barra_avance.html" with turno=turno %}
 
             <span> {{ turno.porcentaje_reparacion }}% completado </span>
           </div>

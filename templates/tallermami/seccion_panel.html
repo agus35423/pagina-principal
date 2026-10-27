@@ -401,15 +401,7 @@
                                 </span>
                             </td>
                             <td>
-                                <div class="progress" role="progressbar"
-                                     aria-valuenow="{{ turno.porcentaje_reparacion }}"
-                                     aria-valuemin="0" aria-valuemax="100"
-                                     aria-label="Avance de reparación">
-                                    <div class="progress-bar"
-                                         style="width: {{ turno.porcentaje_reparacion }}%">
-                                        {{ turno.porcentaje_reparacion }}%
-                                    </div>
-                                </div>
+                                {% include "tallermami/_barra_avance.html" with turno=turno %}
                             </td>
 
                             {% if panel == "secretario" %}

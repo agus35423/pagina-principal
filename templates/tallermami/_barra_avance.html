@@ -1,0 +1,15 @@
+<div class="repair-progress" role="progressbar"
+     aria-label="Avance de reparación"
+     aria-valuenow="{{ turno.porcentaje_reparacion }}"
+     aria-valuemin="0" aria-valuemax="100">
+    <div class="repair-progress-runway" aria-hidden="true">
+        <div class="repair-progress-track">
+            <span class="repair-progress-fill"
+                  style="width: {{ turno.porcentaje_reparacion }}%"></span>
+        </div>
+        <span class="repair-progress-car"
+              style="left: {{ turno.porcentaje_reparacion }}%">
+            <i class="fa-solid fa-car-side"></i>
+        </span>
+    </div>
+</div>

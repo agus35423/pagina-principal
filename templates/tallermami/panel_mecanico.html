@@ -41,14 +41,8 @@
                                 </div>
                             </div>
 
-                            <div class="progress my-3" role="progressbar"
-                                 aria-label="Avance de reparación"
-                                 aria-valuenow="{{ turno.porcentaje_reparacion }}"
-                                 aria-valuemin="0" aria-valuemax="100">
-                                <div class="progress-bar"
-                                     style="width: {{ turno.porcentaje_reparacion }}%">
-                                    {{ turno.porcentaje_reparacion }}%
-                                </div>
+                            <div class="my-3">
+                                {% include "tallermami/_barra_avance.html" with turno=turno %}
                             </div>
 
                             <form method="post"

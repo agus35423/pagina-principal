@@ -70,18 +70,7 @@ Molina Henze {% endblock %} {% block content %}
 
             <h3>{{ turno.get_estado_display }}</h3>
 
-            <div class="progress progress-taller">
-              <div
-                class="progress-bar"
-                role="progressbar"
-                style="width: {{ turno.porcentaje_reparacion }}%;"
-                aria-valuenow="{{ turno.porcentaje_reparacion }}"
-                aria-valuemin="0"
-                aria-valuemax="100"
-              >
-                {{ turno.porcentaje_reparacion }}%
-              </div>
-            </div>
+            {% include "tallermami/_barra_avance.html" with turno=turno %}
 
             <div class="progress-info">
               <span> Avance de reparación </span>

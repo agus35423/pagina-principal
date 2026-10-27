@@ -1533,23 +1533,88 @@ img {
 }
 
 
-.progress-taller {
-
-    height: 13px;
-
-    border-radius: 20px;
-
-    background: #e5e7eb;
-
+.repair-progress {
+    position: relative;
+    width: 100%;
+    height: 38px;
+    isolation: isolate;
 }
 
+.repair-progress-runway {
+    position: absolute;
+    inset: 0 15px;
+}
 
-.progress-taller .progress-bar {
+.repair-progress-track {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, .24);
+    border-radius: 999px;
+    background: linear-gradient(90deg, #e8edf4, #f1f5f9);
+    box-shadow: inset 0 2px 4px rgba(15, 23, 42, .1);
+    transform: translateY(-50%);
+}
 
-    background: var(--blue);
+.repair-progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #2563eb 0%, #06b6d4 55%, #34d399 100%);
+    box-shadow: 0 0 12px rgba(37, 99, 235, .38);
+    transition: width .65s cubic-bezier(.22, 1, .36, 1);
+}
 
-    border-radius: 20px;
+.repair-progress-car {
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 50%;
+    color: #fff;
+    background: linear-gradient(145deg, #123c64, #2563eb);
+    box-shadow: 0 4px 12px rgba(15, 45, 80, .3);
+    transform: translate(-50%, -50%);
+}
 
+.repair-progress-car i {
+    font-size: 15px;
+    animation: repair-car-spin 2.8s ease-in-out infinite;
+}
+
+@keyframes repair-car-spin {
+    0%, 15% {
+        transform: rotate(0deg) translateY(0);
+    }
+
+    45% {
+        transform: rotate(-12deg) translateY(-2px);
+    }
+
+    75% {
+        transform: rotate(12deg) translateY(1px);
+    }
+
+    100% {
+        transform: rotate(0deg) translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .repair-progress-fill {
+        transition: none;
+    }
+
+    .repair-progress-car i {
+        animation: none;
+    }
 }
 
 
@@ -2133,22 +2198,6 @@ img {
     border-color: #fde68a;
     color: #a16207;
     background: #fffbeb;
-}
-
-.jefe-turno-progress {
-    width: 150px;
-    height: 6px;
-    overflow: hidden;
-    margin-top: 9px;
-    border-radius: 999px;
-    background: #e8edf3;
-}
-
-.jefe-turno-progress span {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #2563eb, #38bdf8);
 }
 
 .jefe-turno-progress-label {
