@@ -169,10 +169,35 @@
 
                     </li>
 
-                    {% if user.is_staff or user.is_superuser or user.perfil_mecanico or user.perfil_taller.rol == "administrador" %}
+                    {% if user.is_staff or user.is_superuser or user.perfil_mecanico or user.perfil_taller.rol == "administrador" or user.perfil_taller.rol == "mecanico" %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'panel_mecanico' %}">
-                                Panel de reparaciones
+                                Panel del mecánico
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for grupo in user.groups.all %}
+                        {% if grupo.name == "Jefe de taller" %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'vista_jefe_taller' %}">
+                                    Panel del jefe de taller
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if grupo.name == "Secretario" %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'vista_secretario' %}">
+                                    Panel del secretario
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if user.is_staff or user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'admin:index' %}">
+                                Administración Django
                             </a>
                         </li>
                     {% endif %}

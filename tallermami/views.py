@@ -99,6 +99,15 @@ def login_view(request):
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             usuario = form.get_user()
+            if (
+                not usuario.is_staff
+                and PerfilUsuario.objects.filter(
+                    usuario=usuario,
+                    rol="administrador",
+                ).exists()
+            ):
+                usuario.is_staff = True
+                usuario.save(update_fields=["is_staff"])
             login(request, usuario)
             messages.success(
                 request,

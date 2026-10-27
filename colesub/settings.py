@@ -164,6 +164,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "tallermami.auth_backends.TallerAdminBackend",
+]
+
 
 # ==========================================================
 # IDIOMA Y ZONA HORARIA

@@ -19,6 +19,7 @@ from .models import (
     Disponibilidad,
     OrdenTrabajo,
     OfertaTurno,
+    PerfilUsuario,
     Trabajador,
     Trabajo,
     TrabajoRealizado,
@@ -965,6 +966,109 @@ class AvanceTurnoTests(TestCase):
 
         self.assertEqual(jefe_response.status_code, 200)
         self.assertEqual(secretario_response.status_code, 200)
+
+    def test_cada_rol_ve_el_acceso_a_su_panel_despues_de_iniciar_sesion(self):
+        usuario_jefe = get_user_model().objects.create_user(
+            username="jefe_con_panel",
+            password="ClaveSegura-123",
+        )
+        usuario_jefe.groups.add(Group.objects.create(name="Jefe de taller"))
+
+        usuario_secretario = get_user_model().objects.create_user(
+            username="secretario_con_panel",
+            password="ClaveSegura-123",
+        )
+        usuario_secretario.groups.add(
+            Group.objects.create(name="Secretario")
+        )
+
+        usuario_mecanico = get_user_model().objects.create_user(
+            username="mecanico_con_panel",
+            password="ClaveSegura-123",
+        )
+        PerfilUsuario.objects.create(
+            usuario=usuario_mecanico,
+            rol="mecanico",
+        )
+        Trabajador.objects.create(
+            nombre="Mecánico",
+            apellido="Panel",
+            usuario=usuario_mecanico,
+        )
+
+        accesos = (
+            (usuario_jefe, "Panel del jefe de taller", "vista_jefe_taller"),
+            (
+                usuario_secretario,
+                "Panel del secretario",
+                "vista_secretario",
+            ),
+            (usuario_mecanico, "Panel del mecánico", "panel_mecanico"),
+        )
+        for usuario, etiqueta, vista in accesos:
+            with self.subTest(rol=etiqueta):
+                response = self.client.post(
+                    reverse("login"),
+                    {
+                        "username": usuario.username,
+                        "password": "ClaveSegura-123",
+                    },
+                )
+                self.assertRedirects(response, reverse("inicio"))
+                inicio = self.client.get(reverse("inicio"))
+                self.assertContains(inicio, etiqueta)
+                self.assertContains(inicio, reverse(vista))
+                self.client.logout()
+
+    def test_usuario_con_rol_administrador_accede_al_admin_django_al_iniciar_sesion(
+        self,
+    ):
+        administrador = get_user_model().objects.create_user(
+            username="administrador_rol",
+            password="ClaveSegura-123",
+        )
+        PerfilUsuario.objects.create(
+            usuario=administrador,
+            rol="administrador",
+        )
+
+        response = self.client.post(
+            reverse("login"),
+            {
+                "username": "administrador_rol",
+                "password": "ClaveSegura-123",
+            },
+        )
+
+        self.assertRedirects(response, reverse("inicio"))
+        administrador.refresh_from_db()
+        self.assertTrue(administrador.is_staff)
+        self.assertTrue(administrador.has_perm("tallermami.change_trabajo"))
+        self.assertEqual(
+            self.client.get(reverse("admin:index")).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(
+                reverse("admin:tallermami_trabajo_changelist")
+            ).status_code,
+            200,
+        )
+        for vista in (
+            "vista_jefe_taller",
+            "vista_secretario",
+            "panel_mecanico",
+            "jefe_admin_inicio",
+        ):
+            with self.subTest(vista=vista):
+                self.assertEqual(
+                    self.client.get(reverse(vista)).status_code,
+                    200,
+                )
+        self.assertContains(
+            self.client.get(reverse("inicio")),
+            "Administración Django",
+        )
 
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
