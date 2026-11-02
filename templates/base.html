@@ -68,7 +68,7 @@
 
     <link
         rel="stylesheet"
-        href="{% static 'css/taller.css' %}?v=20261027-2"
+        href="{% static 'css/taller.css' %}?v=20261027-3"
     >
 
 </head>
@@ -81,7 +81,7 @@
      NAVBAR
 ======================================================= -->
 
-<nav class="navbar navbar-expand-lg navbar-dark navbar-taller sticky-top">
+<nav class="navbar navbar-expand-lg navbar-dark navbar-taller{% if user.is_staff or user.is_superuser %} navbar-taller-admin{% endif %} sticky-top">
 
     <div class="container">
 
@@ -196,7 +196,8 @@
 
                     {% if user.is_staff or user.is_superuser %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'admin:index' %}">
+                            <a class="nav-link nav-link-admin" href="{% url 'admin:index' %}">
+                                <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
                                 Administración Django
                             </a>
                         </li>
@@ -206,7 +207,7 @@
                     <li class="nav-item ms-lg-2">
 
                         <a
-                            class="btn btn-outline-light btn-sm px-3"
+                            class="btn btn-outline-light btn-sm px-3 nav-session-link"
                             href="{% url 'logout' %}"
                         >
                             Cerrar sesión

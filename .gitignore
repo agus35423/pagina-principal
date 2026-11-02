@@ -4,3 +4,14 @@ __pycache__/
 *.py[cod]
 .env
 db.sqlite3
+
+# Archivos privados y bases de datos
+db.sqlite3
+datos.json
+datos_locales.json
+datos_taller.json
+respaldo_render_antes_importar.json
+respaldo_render_antes_reemplazo.json
+.env
+env/
+.venv/
