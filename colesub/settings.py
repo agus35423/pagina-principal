@@ -2,7 +2,6 @@ from pathlib import Path
 import os
 import dj_database_url
 
-
 # ==========================================================
 # RUTA PRINCIPAL
 # ==========================================================
@@ -122,14 +121,21 @@ WSGI_APPLICATION = "colesub.wsgi.application"
 
 
 
-# ... resto de tu configuración ...
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.config(
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600
-    )
-}
 
 # ==========================================================
 # VALIDACIÓN DE CONTRASEÑAS
@@ -156,11 +162,6 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME":
         "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
-]
-
-AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-    "tallermami.auth_backends.TallerAdminBackend",
 ]
 
 
@@ -246,7 +247,11 @@ EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "false").lower() == "true"
 EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "15"))
 
 
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = (
+    f"Taller Molina Henze <{EMAIL_HOST_USER}>"
+    if EMAIL_HOST_USER
+    else "Taller Molina Henze"
+)
 
 PUBLIC_SITE_URL = os.environ.get(
     "PUBLIC_SITE_URL",
