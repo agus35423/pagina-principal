@@ -271,6 +271,24 @@ class SolicitarTurnoForm(forms.ModelForm):
 
     def clean_fecha_turno(self):
         fecha = self.cleaned_data.get("fecha_turno")
+        if self.instance.pk and self.instance.fecha_turno and fecha:
+            fecha_actual = self.instance.fecha_turno
+            fecha_actual_local = (
+                timezone.localtime(fecha_actual)
+                if timezone.is_aware(fecha_actual)
+                else fecha_actual
+            )
+            fecha_nueva_local = (
+                timezone.localtime(fecha)
+                if timezone.is_aware(fecha)
+                else fecha
+            )
+            if (
+                fecha_actual_local.date() == fecha_nueva_local.date()
+                and fecha_actual_local.time().replace(tzinfo=None)
+                == fecha_nueva_local.time().replace(tzinfo=None)
+            ):
+                return fecha
         validar_fecha_y_hora_turno(fecha, self.instance)
         return fecha
 

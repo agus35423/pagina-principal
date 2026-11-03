@@ -4,7 +4,7 @@
 {% block title %}{{ titulo }}{% endblock %}
 
 {% block content %}
-<div class="container py-4 {% if seccion == 'turnos' or seccion == 'trabajos_realizados' %}jefe-admin-page{% endif %}">
+<div class="container py-4 {% if seccion == 'turnos' or seccion == 'trabajos_realizados' %}jefe-admin-page{% endif %}{% if panel == 'secretario' and seccion == 'turnos' %} secretario-turnos-page{% elif panel == 'secretario' and seccion == 'trabajos_realizados' %} secretario-trabajos-page{% endif %}">
 
     {% if panel == "jefe" %}
         <a href="{% url 'vista_jefe_taller' %}"
@@ -305,11 +305,12 @@
     {# ================= TURNOS ================= #}
     {% elif seccion == "trabajos_realizados" %}
 
-        <p class="text-muted mb-3">
+        <p class="text-muted mb-3{% if panel == 'secretario' %} secretario-trabajos-count{% endif %}">
+            {% if panel == "secretario" %}<i class="fa-solid fa-clipboard-check me-2" aria-hidden="true"></i>{% endif %}
             Trabajos registrados: {{ trabajos_realizados|length }}
         </p>
-        <div class="table-responsive jefe-admin-table-card">
-            <table class="table table-hover align-middle mb-0 jefe-admin-table">
+        <div class="table-responsive jefe-admin-table-card{% if panel == 'secretario' %} secretario-trabajos-table-wrap{% endif %}">
+            <table class="table table-hover align-middle mb-0 jefe-admin-table{% if panel == 'secretario' %} secretario-trabajos-table{% endif %}">
                 <thead>
                     <tr>
                         <th>Fecha</th>
@@ -323,12 +324,18 @@
                 <tbody>
                     {% for trabajo_realizado in trabajos_realizados %}
                         <tr>
-                            <td>{{ trabajo_realizado.fecha|date:"d/m/Y" }}</td>
-                            <td>{{ trabajo_realizado.orden_trabajo.cliente }}</td>
-                            <td>{{ trabajo_realizado.orden_trabajo.vehiculo }}</td>
+                            <td>
+                                {% if panel == "secretario" %}
+                                    <span class="secretario-trabajos-date">{{ trabajo_realizado.fecha|date:"d/m/Y" }}</span>
+                                {% else %}
+                                    {{ trabajo_realizado.fecha|date:"d/m/Y" }}
+                                {% endif %}
+                            </td>
+                            <td class="secretario-trabajos-client">{{ trabajo_realizado.orden_trabajo.cliente }}</td>
+                            <td class="secretario-trabajos-vehicle">{{ trabajo_realizado.orden_trabajo.vehiculo }}</td>
                             <td>{{ trabajo_realizado.orden_trabajo.servicio }}</td>
                             <td>{{ trabajo_realizado.mecanico }}</td>
-                            <td>{{ trabajo_realizado.descripcion }}</td>
+                            <td class="secretario-trabajos-description">{{ trabajo_realizado.descripcion }}</td>
                         </tr>
                     {% empty %}
                         <tr>
@@ -343,7 +350,7 @@
 
     {% elif seccion == "turnos" %}
 
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3 jefe-turnos-toolbar">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3 jefe-turnos-toolbar{% if panel == 'secretario' %} secretario-turnos-toolbar{% endif %}">
             <p class="text-muted mb-0">
                 Turnos encontrados: {{ turnos|length }}
             </p>
@@ -363,7 +370,7 @@
             </div>
         </div>
 
-        <form method="get" class="row g-2 mb-4 {% if panel == 'jefe' %}jefe-turnos-search{% endif %}">
+        <form method="get" class="row g-2 mb-4 {% if panel == 'jefe' %}jefe-turnos-search{% elif panel == 'secretario' %}jefe-turnos-search secretario-turnos-search{% endif %}">
             <div class="col-md-9">
                 <input
                     type="text"
@@ -398,9 +405,15 @@
             {% endif %}
         </form>
 
-        <div class="{% if panel == 'jefe' %}jefe-turnos-table-wrap{% endif %}">
-        <div class="table-responsive">
-            <table class="table table-striped table-bordered align-middle {% if panel == 'jefe' %}jefe-admin-table{% endif %}">
+        <div class="{% if panel == 'jefe' %}jefe-turnos-table-wrap{% elif panel == 'secretario' %}secretario-turnos-table-wrap{% endif %}">
+        {% if panel == "secretario" %}
+            <p class="secretario-turnos-hint mb-0">
+                <i class="fa-solid fa-arrows-left-right me-2" aria-hidden="true"></i>
+                Deslizá la tabla horizontalmente para ver todas las columnas.
+            </p>
+        {% endif %}
+        <div class="table-responsive{% if panel == 'secretario' %} secretario-turnos-scroll{% endif %}">
+            <table class="table table-striped table-bordered align-middle {% if panel == 'jefe' %}jefe-admin-table{% elif panel == 'secretario' %}secretario-turnos-table{% endif %}">
                 <thead class="{% if panel == 'jefe' %}{% else %}table-dark{% endif %}">
                     <tr>
                         <th>Cliente</th>
@@ -446,7 +459,7 @@
                             <td>{{ turno.trabajador|default:"Sin asignar" }}</td>
                             <td>{{ turno.fecha_turno|date:"d/m/Y H:i" }}</td>
                             <td>
-                                <span class="badge rounded-pill text-bg-primary jefe-state-badge">
+                                <span class="badge rounded-pill text-bg-primary jefe-state-badge{% if panel == 'secretario' %} secretario-turno-status secretario-turno-status-{{ turno.estado }}{% endif %}">
                                     {{ turno.get_estado_display }}
                                 </span>
                             </td>
@@ -455,7 +468,7 @@
                             </td>
 
                             {% if panel == "secretario" %}
-                                <td>
+                                <td class="secretario-turno-actions">
                                     <a href="{% url 'secretario_turno_editar' turno.id %}"
                                        class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-edit me-1"></i>

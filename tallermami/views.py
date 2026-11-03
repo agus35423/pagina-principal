@@ -2032,6 +2032,7 @@ def secretario_turno_editar(request, turno_id):
     turno = get_object_or_404(Turno, pk=turno_id)
     porcentaje_anterior = turno.porcentaje_reparacion
     estado_anterior = turno.estado
+    fecha_anterior = turno.fecha_turno
 
     form = TurnoForm(
         request.POST or None,
@@ -2040,11 +2041,15 @@ def secretario_turno_editar(request, turno_id):
     if request.method == "POST" and form.is_valid():
         try:
             with transaction.atomic():
-                turno_editado = form.save(commit=False)
-                guardar_turno_con_disponibilidad(
-                    turno_editado,
-                    form.cleaned_data["fecha_turno"],
+                fecha_cambio = (
+                    fecha_anterior != form.cleaned_data["fecha_turno"]
                 )
+                turno_editado = form.save(commit=False)
+                if fecha_cambio:
+                    guardar_turno_con_disponibilidad(
+                        turno_editado,
+                        form.cleaned_data["fecha_turno"],
+                    )
                 form.save()
                 if (
                     estado_anterior != "entregado"

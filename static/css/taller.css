@@ -2747,6 +2747,307 @@ img {
     min-width: 980px;
 }
 
+.secretario-turnos-page {
+    --secretario-ink: #102b45;
+}
+
+.secretario-turnos-toolbar,
+.secretario-turnos-search {
+    border-color: #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+}
+
+.secretario-turnos-toolbar {
+    padding: 18px 20px;
+}
+
+.secretario-turnos-toolbar p {
+    color: var(--secretario-ink);
+}
+
+.secretario-turnos-toolbar .btn {
+    min-height: 42px;
+    padding-inline: 16px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.secretario-turnos-search {
+    padding: 18px;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+
+.secretario-turnos-search .form-control {
+    min-height: 44px;
+    border-color: #d7e0ea;
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+.secretario-turnos-search .form-control:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, .12);
+}
+
+.secretario-turnos-search .btn {
+    min-height: 44px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.secretario-turnos-table-wrap {
+    overflow: hidden;
+    border: 1px solid #dfe7ef;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, .08);
+}
+
+.secretario-turnos-hint {
+    padding: 10px 16px;
+    border-bottom: 1px solid #e8edf3;
+    color: #64748b;
+    background: #f8fafc;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.secretario-turnos-hint i {
+    color: #2563eb;
+}
+
+.secretario-turnos-scroll {
+    max-height: min(68vh, 760px);
+    overflow: auto;
+    scrollbar-color: #9aacc0 #eef2f6;
+    scrollbar-width: thin;
+}
+
+.secretario-turnos-table {
+    min-width: 1450px;
+    margin: 0;
+    border-color: #edf1f5;
+}
+
+.secretario-turnos-table thead th {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    padding: 15px 13px;
+    border: 0;
+    color: #fff;
+    background: linear-gradient(120deg, #102b45, #17466c);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.secretario-turnos-table tbody td {
+    padding: 15px 13px;
+    border-color: #edf1f5;
+    color: #334155;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.secretario-turnos-table tbody tr:nth-child(even) > * {
+    background-color: #f8fafc;
+}
+
+.secretario-turnos-table tbody tr:hover > * {
+    background-color: #eef6ff;
+}
+
+.secretario-turnos-table tbody td:first-child {
+    min-width: 145px;
+    color: #172b42;
+    font-weight: 750;
+}
+
+.secretario-turnos-table tbody td:nth-child(6) {
+    color: #102b45;
+    font-weight: 750;
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+
+.secretario-turnos-table tbody td:nth-child(9) {
+    min-width: 135px;
+    white-space: nowrap;
+}
+
+.secretario-turnos-table .secretario-turno-status {
+    padding: 7px 10px;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8 !important;
+    background: #eff6ff !important;
+    font-size: 11px;
+    font-weight: 750;
+}
+
+.secretario-turnos-table .secretario-turno-status-reparacion,
+.secretario-turnos-table .secretario-turno-status-diagnostico {
+    border-color: #c4b5fd;
+    color: #6d28d9 !important;
+    background: #f5f3ff !important;
+}
+
+.secretario-turnos-table .secretario-turno-status-finalizado,
+.secretario-turnos-table .secretario-turno-status-entregado,
+.secretario-turnos-table .secretario-turno-status-presupuesto_aceptado {
+    border-color: #a7f3d0;
+    color: #047857 !important;
+    background: #ecfdf5 !important;
+}
+
+.secretario-turnos-table .secretario-turno-status-esperando_repuesto,
+.secretario-turnos-table .secretario-turno-status-presupuesto_pendiente {
+    border-color: #fde68a;
+    color: #a16207 !important;
+    background: #fffbeb !important;
+}
+
+.secretario-turnos-table .secretario-turno-status-cancelado,
+.secretario-turnos-table .secretario-turno-status-presupuesto_rechazado {
+    border-color: #fecaca;
+    color: #b91c1c !important;
+    background: #fef2f2 !important;
+}
+
+.secretario-turno-actions {
+    min-width: 205px;
+    white-space: nowrap;
+}
+
+.secretario-turno-actions .btn {
+    margin: 2px;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.secretario-trabajos-page {
+    --secretario-ink: #102b45;
+}
+
+.secretario-trabajos-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 11px 15px;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    color: #1e3a5f !important;
+    background: #eff6ff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.secretario-trabajos-count i {
+    color: #2563eb;
+}
+
+.secretario-trabajos-table-wrap {
+    max-height: min(68vh, 760px);
+    overflow: auto;
+    border-color: #dfe7ef;
+    border-radius: 16px;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, .08);
+    scrollbar-color: #9aacc0 #eef2f6;
+    scrollbar-width: thin;
+}
+
+.secretario-trabajos-table {
+    min-width: 1050px;
+}
+
+.secretario-trabajos-table thead th {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    padding: 15px 14px;
+    color: #fff;
+    background: linear-gradient(120deg, #102b45, #17466c);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.secretario-trabajos-table tbody td {
+    padding: 15px 14px;
+    border-color: #edf1f5;
+    color: #334155;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.secretario-trabajos-table tbody tr:nth-child(even) > * {
+    background: #f8fafc;
+}
+
+.secretario-trabajos-table tbody tr:hover > * {
+    background: #eef6ff;
+}
+
+.secretario-trabajos-date {
+    display: inline-block;
+    padding: 6px 9px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    color: #1d4ed8;
+    background: #eff6ff;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.secretario-trabajos-client,
+.secretario-trabajos-vehicle {
+    color: #172b42 !important;
+    font-weight: 700;
+}
+
+.secretario-trabajos-vehicle {
+    min-width: 210px;
+}
+
+.secretario-trabajos-description {
+    min-width: 280px;
+    max-width: 420px;
+    color: #64748b !important;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 575.98px) {
+    .secretario-turnos-toolbar,
+    .secretario-turnos-search {
+        padding: 14px;
+        border-radius: 13px;
+    }
+
+    .secretario-turnos-toolbar .btn {
+        width: 100%;
+    }
+
+    .secretario-turnos-scroll {
+        max-height: 65vh;
+    }
+
+    .secretario-trabajos-count {
+        width: 100%;
+    }
+
+    .secretario-trabajos-table-wrap {
+        max-height: 65vh;
+    }
+}
+
 .jefe-admin-form-card {
     overflow: hidden;
     border: 1px solid #e6ebf1;

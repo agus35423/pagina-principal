@@ -790,6 +790,9 @@ class ReservaYAvanceTurnoTests(TestCase):
         response = self.client.get(reverse("secretario_turnos"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "secretario-turnos-table")
+        self.assertContains(response, "secretario-turno-actions")
+        self.assertContains(response, "Deslizá la tabla horizontalmente")
         self.assertContains(response, "DNI")
         self.assertContains(response, "30123456")
         self.assertContains(response, "Toyota")
@@ -1120,6 +1123,8 @@ class PanelSecretarioTests(TestCase):
         )
         self.assertContains(activos, reverse("secretario_turnos_finalizados"))
         self.assertContains(finalizados, "Trabajos realizados")
+        self.assertContains(finalizados, "secretario-trabajos-table")
+        self.assertContains(finalizados, "secretario-trabajos-count")
         self.assertNotContains(activos, "GH456IJ")
 
     def test_secretario_al_entregar_registra_trabajo_y_lo_quita_de_turnos(self):
@@ -1155,6 +1160,15 @@ class PanelSecretarioTests(TestCase):
             modelo="Focus",
             anio=2018,
             patente="JK123LM",
+            servicio=servicio,
+            fecha_turno=fecha_turno,
+        )
+        Turno.objects.create(
+            vehiculo="Toyota Corolla (2020)",
+            marca="Toyota",
+            modelo="Corolla",
+            anio=2020,
+            patente="LM456NO",
             servicio=servicio,
             fecha_turno=fecha_turno,
         )
