@@ -4,7 +4,7 @@
 {% block title %}{{ titulo }}{% endblock %}
 
 {% block content %}
-<div class="container py-4 {% if panel == 'jefe' and seccion == 'turnos' %}jefe-admin-page{% endif %}">
+<div class="container py-4 {% if seccion == 'turnos' or seccion == 'trabajos_realizados' %}jefe-admin-page{% endif %}">
 
     {% if panel == "jefe" %}
         <a href="{% url 'vista_jefe_taller' %}"
@@ -18,11 +18,15 @@
         </a>
     {% endif %}
 
-    {% if panel == "jefe" and seccion == "turnos" %}
+    {% if seccion == "turnos" or seccion == "trabajos_realizados" %}
         <div class="jefe-admin-hero mb-4">
             <span class="jefe-admin-eyebrow">OPERACIONES</span>
             <h1>{{ titulo }}</h1>
-            <p>Revisá el estado de cada vehículo y abrí su ficha para actualizarlo.</p>
+            {% if seccion == "trabajos_realizados" %}
+                <p>Consultá los trabajos entregados y registrados por el equipo.</p>
+            {% else %}
+                <p>Revisá el estado de cada vehículo y abrí su ficha para actualizarlo.</p>
+            {% endif %}
         </div>
     {% else %}
         <h1 class="mb-4">{{ titulo }}</h1>
@@ -299,18 +303,64 @@
         </div>
 
     {# ================= TURNOS ================= #}
+    {% elif seccion == "trabajos_realizados" %}
+
+        <p class="text-muted mb-3">
+            Trabajos registrados: {{ trabajos_realizados|length }}
+        </p>
+        <div class="table-responsive jefe-admin-table-card">
+            <table class="table table-hover align-middle mb-0 jefe-admin-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Vehículo</th>
+                        <th>Servicio</th>
+                        <th>Trabajador</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trabajo_realizado in trabajos_realizados %}
+                        <tr>
+                            <td>{{ trabajo_realizado.fecha|date:"d/m/Y" }}</td>
+                            <td>{{ trabajo_realizado.orden_trabajo.cliente }}</td>
+                            <td>{{ trabajo_realizado.orden_trabajo.vehiculo }}</td>
+                            <td>{{ trabajo_realizado.orden_trabajo.servicio }}</td>
+                            <td>{{ trabajo_realizado.mecanico }}</td>
+                            <td>{{ trabajo_realizado.descripcion }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                Todavía no hay trabajos realizados registrados.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
     {% elif seccion == "turnos" %}
 
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3 {% if panel == 'jefe' %}jefe-turnos-toolbar{% endif %}">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3 jefe-turnos-toolbar">
             <p class="text-muted mb-0">
                 Turnos encontrados: {{ turnos|length }}
             </p>
-
-            <a href="{% url 'descargar_excel_turnos' %}?buscar={{ busqueda|urlencode }}"
-               class="btn btn-success">
-                <i class="fas fa-file-excel me-2"></i>
-                Exportar a Excel
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+                {% if panel == "jefe" %}
+                    <a href="{% url 'jefe_turnos_finalizados' %}"
+                       class="btn btn-outline-primary">Trabajos realizados</a>
+                {% else %}
+                    <a href="{% url 'secretario_turnos_finalizados' %}"
+                       class="btn btn-outline-primary">Trabajos realizados</a>
+                {% endif %}
+                <a href="{% url 'descargar_excel_turnos' %}?buscar={{ busqueda|urlencode }}"
+                   class="btn btn-success">
+                    <i class="fas fa-file-excel me-2"></i>
+                    Exportar a Excel
+                </a>
+            </div>
         </div>
 
         <form method="get" class="row g-2 mb-4 {% if panel == 'jefe' %}jefe-turnos-search{% endif %}">
@@ -436,7 +486,7 @@
                             {% else %}
                                 <td colspan="10" class="text-center">
                             {% endif %}
-                                No se encontraron turnos.
+                                No se encontraron turnos activos.
                                 </td>
                         </tr>
                     {% endfor %}

@@ -31,6 +31,7 @@ from .utils import (
     generar_pdf_turno,
     normalizar_telefono_whatsapp,
 )
+from .services import registrar_trabajo_entregado
 from .admin import TurnoAdmin
 
 
@@ -158,7 +159,7 @@ class AdministracionJefeTallerTests(TestCase):
         )
         self.assertEqual(
             response.context["trabajadores_destacados"][0].cantidad_trabajos,
-            2,
+            3,
         )
         self.assertContains(response, "Estadísticas de clientes")
         self.assertContains(response, "Estadísticas de trabajadores")
@@ -172,6 +173,8 @@ class AdministracionJefeTallerTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("jefe_admin_inicio"))
+        self.assertContains(response, reverse("jefe_turnos_finalizados"))
+        self.assertContains(response, "Trabajos realizados")
 
     def test_todos_los_modelos_registrados_tienen_lista_y_formulario(self):
         for model in admin.site._registry:
@@ -358,6 +361,71 @@ class AdministracionJefeTallerTests(TestCase):
                 args=["tallermami", "turno", turno.pk],
             ),
         )
+
+    def test_jefe_separa_turnos_entregados_de_los_turnos_activos(self):
+        trabajo = Trabajo.objects.create(nombre="Revisión")
+        cliente = Cliente.objects.create(
+            nombre="Ana",
+            apellido="Entregada",
+            email="ana.entregada@example.com",
+            telefono="3511234567",
+        )
+        trabajador = Trabajador.objects.create(
+            nombre="Mario",
+            apellido="Mecánico",
+        )
+        vehiculo = Vehiculo.objects.create(
+            marca="Ford",
+            modelo="Fiesta",
+            anio=2020,
+            patente="CD456EF",
+            cliente=cliente,
+        )
+        turno_activo = Turno.objects.create(
+            vehiculo="Ford Focus (2018)",
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="AB123CD",
+            servicio=trabajo,
+            fecha_turno=timezone.now() + timedelta(days=1),
+            estado="reparacion",
+        )
+        turno_entregado = Turno.objects.create(
+            vehiculo="Ford Fiesta (2020)",
+            marca="Ford",
+            modelo="Fiesta",
+            anio=2020,
+            patente="CD456EF",
+            cliente=cliente,
+            vehiculo_asociado=vehiculo,
+            trabajador=trabajador,
+            servicio=trabajo,
+            fecha_turno=timezone.now() + timedelta(days=2),
+            estado="entregado",
+        )
+        registro = registrar_trabajo_entregado(turno_entregado)
+
+        activos = self.client.get(reverse("jefe_turnos"))
+        finalizados = self.client.get(reverse("jefe_turnos_finalizados"))
+
+        self.assertEqual(activos.status_code, 200)
+        self.assertEqual(finalizados.status_code, 200)
+        self.assertEqual(list(activos.context["turnos"]), [turno_activo])
+        self.assertEqual(
+            list(finalizados.context["trabajos_realizados"]),
+            [registro],
+        )
+        self.assertContains(activos, reverse("jefe_turnos_finalizados"))
+        self.assertContains(finalizados, "Trabajos realizados")
+        self.assertNotContains(activos, "CD456EF")
+        turnos_administracion = self.client.get(
+            reverse(
+                "jefe_admin_lista",
+                args=["tallermami", "turno"],
+            ),
+        )
+        self.assertNotContains(turnos_administracion, "CD456EF")
 
     def test_jefe_puede_crear_editar_y_eliminar_trabajo(self):
         lista_url = reverse(
@@ -916,6 +984,9 @@ class PanelSecretarioTests(TestCase):
         self.assertContains(response, reverse("secretario_presupuestos"))
         self.assertContains(response, reverse("secretario_turnos"))
         self.assertContains(response, reverse("secretario_estadisticas"))
+        self.assertContains(response, reverse("secretario_turnos_finalizados"))
+        self.assertContains(response, "Trabajos realizados")
+        self.assertContains(response, "5 secciones")
 
     def test_secretario_consulta_estadisticas_separadas_de_clientes_y_trabajadores(self):
         secretaria = get_user_model().objects.create_user(
@@ -935,8 +1006,16 @@ class PanelSecretarioTests(TestCase):
         servicio = Trabajo.objects.create(nombre="Reparación")
 
         for numero, estado in enumerate(("entregado", "pendiente"), start=1):
-            Turno.objects.create(
+            vehiculo = Vehiculo.objects.create(
+                marca="Ford",
+                modelo="Focus",
+                anio=2018,
+                patente=f"AB123C{numero}",
                 cliente=cliente,
+            )
+            turno = Turno.objects.create(
+                cliente=cliente,
+                vehiculo_asociado=vehiculo,
                 trabajador=trabajador,
                 vehiculo="Ford Focus (2018)",
                 marca="Ford",
@@ -947,6 +1026,22 @@ class PanelSecretarioTests(TestCase):
                 fecha_turno=timezone.now() + timedelta(days=numero),
                 estado=estado,
             )
+            if estado == "entregado":
+                orden = OrdenTrabajo.objects.create(
+                    turno=turno,
+                    vehiculo=vehiculo,
+                    cliente=cliente,
+                    servicio=servicio,
+                    mecanico=trabajador,
+                    fecha_ingreso=timezone.localdate(),
+                    estado="finalizado",
+                )
+                TrabajoRealizado.objects.create(
+                    orden_trabajo=orden,
+                    descripcion="Reparación entregada",
+                    fecha=timezone.localdate(),
+                    mecanico=trabajador,
+                )
 
         self.client.force_login(secretaria)
         response = self.client.get(reverse("secretario_estadisticas"))
@@ -963,6 +1058,139 @@ class PanelSecretarioTests(TestCase):
         self.assertContains(response, "Estadísticas de clientes")
         self.assertContains(response, "Estadísticas de trabajadores")
         self.assertContains(response, reverse("vista_secretario"))
+
+    def test_secretario_separa_turnos_entregados_de_los_turnos_activos(self):
+        secretaria = get_user_model().objects.create_user(
+            username="secretaria_turnos_finalizados",
+        )
+        secretaria.groups.add(Group.objects.create(name="Secretario"))
+        servicio = Trabajo.objects.create(nombre="Revisión")
+        cliente = Cliente.objects.create(
+            nombre="Lucía",
+            apellido="Entregada",
+            email="lucia.entregada@example.com",
+            telefono="3511234568",
+        )
+        trabajador = Trabajador.objects.create(
+            nombre="Pedro",
+            apellido="Mecánico",
+        )
+        vehiculo = Vehiculo.objects.create(
+            marca="Ford",
+            modelo="Fiesta",
+            anio=2020,
+            patente="GH456IJ",
+            cliente=cliente,
+        )
+        turno_activo = Turno.objects.create(
+            vehiculo="Ford Focus (2018)",
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="EF123GH",
+            servicio=servicio,
+            fecha_turno=timezone.now() + timedelta(days=1),
+            estado="reparacion",
+        )
+        turno_entregado = Turno.objects.create(
+            vehiculo="Ford Fiesta (2020)",
+            marca="Ford",
+            modelo="Fiesta",
+            anio=2020,
+            patente="GH456IJ",
+            cliente=cliente,
+            vehiculo_asociado=vehiculo,
+            trabajador=trabajador,
+            servicio=servicio,
+            fecha_turno=timezone.now() + timedelta(days=2),
+            estado="entregado",
+        )
+        registro = registrar_trabajo_entregado(turno_entregado)
+        self.client.force_login(secretaria)
+
+        activos = self.client.get(reverse("secretario_turnos"))
+        finalizados = self.client.get(reverse("secretario_turnos_finalizados"))
+
+        self.assertEqual(activos.status_code, 200)
+        self.assertEqual(finalizados.status_code, 200)
+        self.assertEqual(list(activos.context["turnos"]), [turno_activo])
+        self.assertEqual(
+            list(finalizados.context["trabajos_realizados"]),
+            [registro],
+        )
+        self.assertContains(activos, reverse("secretario_turnos_finalizados"))
+        self.assertContains(finalizados, "Trabajos realizados")
+        self.assertNotContains(activos, "GH456IJ")
+
+    def test_secretario_al_entregar_registra_trabajo_y_lo_quita_de_turnos(self):
+        secretaria = get_user_model().objects.create_user(
+            username="secretaria_entrega",
+        )
+        secretaria.groups.add(Group.objects.create(name="Secretario"))
+        servicio = Trabajo.objects.create(nombre="Mantenimiento")
+        trabajador = Trabajador.objects.create(
+            nombre="Pedro",
+            apellido="Mecánico",
+        )
+        cliente = Cliente.objects.create(
+            nombre="Lucía",
+            apellido="Entrega",
+            email="lucia.entrega@example.com",
+            telefono="3511234568",
+        )
+        vehiculo = Vehiculo.objects.create(
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="JK123LM",
+            cliente=cliente,
+        )
+        fecha_turno = timezone.now() + timedelta(days=5)
+        turno = Turno.objects.create(
+            cliente=cliente,
+            vehiculo_asociado=vehiculo,
+            trabajador=trabajador,
+            vehiculo="Ford Focus (2018)",
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="JK123LM",
+            servicio=servicio,
+            fecha_turno=fecha_turno,
+        )
+        self.client.force_login(secretaria)
+
+        respuesta = self.client.post(
+            reverse("secretario_turno_editar", args=[turno.pk]),
+            {
+                "marca": "Ford",
+                "modelo": "Focus",
+                "anio": "2018",
+                "patente": "JK123LM",
+                "servicio": servicio.pk,
+                "trabajador": trabajador.pk,
+                "fecha_turno": timezone.localtime(fecha_turno).strftime(
+                    "%Y-%m-%dT%H:%M",
+                ),
+                "estado": "entregado",
+                "porcentaje_reparacion": "100",
+                "observaciones": "",
+            },
+        )
+
+        turno.refresh_from_db()
+        self.assertRedirects(respuesta, reverse("secretario_turnos"))
+        self.assertEqual(turno.estado, "entregado")
+        self.assertTrue(OrdenTrabajo.objects.filter(turno=turno).exists())
+        self.assertTrue(
+            TrabajoRealizado.objects.filter(
+                orden_trabajo__turno=turno,
+            ).exists(),
+        )
+        turnos_activos = self.client.get(reverse("secretario_turnos"))
+        self.assertNotContains(turnos_activos, "JK123LM")
+        trabajos = self.client.get(reverse("secretario_turnos_finalizados"))
+        self.assertContains(trabajos, "JK123LM")
 
 
 class PasswordResetTests(TestCase):
@@ -1325,6 +1553,63 @@ class AvanceTurnoTests(TestCase):
             "Tu cuenta todavía no está asociada a un mecánico.",
         )
 
+    def test_cliente_abre_estado_de_su_turno_sin_ingresar_patente(self):
+        cliente = get_user_model().objects.create_user(
+            username="cliente_estado_directo",
+        )
+        turno = Turno.objects.create(
+            usuario=cliente,
+            vehiculo="Ford Focus (2018)",
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="JK123LM",
+            servicio=self.trabajo,
+            fecha_turno=timezone.now() + timedelta(days=3),
+            estado="reparacion",
+            porcentaje_reparacion=45,
+        )
+        self.client.force_login(cliente)
+
+        mis_turnos = self.client.get(reverse("mis_turnos"))
+        estado = self.client.get(
+            reverse("estado_reparacion_turno", args=[turno.pk]),
+        )
+
+        self.assertContains(
+            mis_turnos,
+            reverse("estado_reparacion_turno", args=[turno.pk]),
+        )
+        self.assertEqual(estado.status_code, 200)
+        self.assertContains(estado, "En reparación")
+        self.assertContains(estado, "45%")
+        self.assertNotContains(estado, 'name="patente"')
+
+    def test_cliente_no_puede_consultar_directamente_el_turno_de_otro(self):
+        duenio_turno = get_user_model().objects.create_user(
+            username="cliente_duenio_turno",
+        )
+        otro_cliente = get_user_model().objects.create_user(
+            username="cliente_otro_turno",
+        )
+        turno = Turno.objects.create(
+            usuario=duenio_turno,
+            vehiculo="Ford Focus (2018)",
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="MN456PQ",
+            servicio=self.trabajo,
+            fecha_turno=timezone.now() + timedelta(days=3),
+        )
+        self.client.force_login(otro_cliente)
+
+        response = self.client.get(
+            reverse("estado_reparacion_turno", args=[turno.pk]),
+        )
+
+        self.assertEqual(response.status_code, 404)
+
     def crear_turno_asignado(self, usuario_mecanico, patente):
         mecanico = Trabajador.objects.create(
             nombre="Juan",
@@ -1354,7 +1639,35 @@ class AvanceTurnoTests(TestCase):
         usuario_mecanico = get_user_model().objects.create_user(
             username="mecanico_panel",
         )
-        self.crear_turno_asignado(usuario_mecanico, "AA111AA")
+        turno_activo = self.crear_turno_asignado(usuario_mecanico, "AA111AA")
+        turno_entregado = Turno.objects.create(
+            trabajador=turno_activo.trabajador,
+            vehiculo="Ford Focus (2018)",
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="AA222AA",
+            servicio=self.trabajo,
+            fecha_turno=timezone.now() + timedelta(days=4),
+            estado="entregado",
+        )
+        cliente = Cliente.objects.create(
+            nombre="Cliente",
+            apellido="Entregado",
+            email="cliente.entregado@example.com",
+            telefono="3511234569",
+        )
+        vehiculo = Vehiculo.objects.create(
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="AA222AA",
+            cliente=cliente,
+        )
+        turno_entregado.cliente = cliente
+        turno_entregado.vehiculo_asociado = vehiculo
+        turno_entregado.save(update_fields=["cliente", "vehiculo_asociado"])
+        registro = registrar_trabajo_entregado(turno_entregado)
         otro_mecanico = get_user_model().objects.create_user(
             username="otro_mecanico",
         )
@@ -1366,6 +1679,116 @@ class AvanceTurnoTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AA111AA")
         self.assertNotContains(response, "BB222BB")
+        self.assertEqual(list(response.context["turnos"]), [turno_activo])
+        self.assertEqual(
+            list(response.context["trabajos_realizados"]),
+            [registro],
+        )
+        self.assertContains(response, "Trabajos realizados")
+
+    def test_entregar_turno_crea_orden_y_trabajo_realizado_sin_duplicar(self):
+        usuario_mecanico = get_user_model().objects.create_user(
+            username="mecanico_entrega",
+        )
+        mecanico = Trabajador.objects.create(
+            nombre="Juan",
+            apellido="Mecánico",
+            usuario=usuario_mecanico,
+        )
+        cliente = Cliente.objects.create(
+            nombre="Ana",
+            apellido="Entrega",
+            email="ana.entrega@example.com",
+            telefono="3511234567",
+        )
+        vehiculo = Vehiculo.objects.create(
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="ZX123CV",
+            cliente=cliente,
+        )
+        turno = Turno.objects.create(
+            usuario=cliente.usuario,
+            cliente=cliente,
+            vehiculo_asociado=vehiculo,
+            trabajador=mecanico,
+            vehiculo="Ford Focus (2018)",
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="ZX123CV",
+            servicio=self.trabajo,
+            fecha_turno=timezone.now() + timedelta(days=3),
+            porcentaje_reparacion=80,
+        )
+        self.client.force_login(usuario_mecanico)
+
+        respuesta = self.client.post(
+            reverse("mecanico_actualizar_avance", args=[turno.pk]),
+            {
+                "porcentaje_reparacion": "100",
+                "estado": "entregado",
+            },
+        )
+
+        turno.refresh_from_db()
+        orden = OrdenTrabajo.objects.get(turno=turno)
+        trabajo_realizado = TrabajoRealizado.objects.get(
+            orden_trabajo=orden,
+        )
+        registrar_trabajo_entregado(turno)
+        panel = self.client.get(reverse("panel_mecanico"))
+
+        self.assertRedirects(respuesta, reverse("panel_mecanico"))
+        self.assertEqual(turno.estado, "entregado")
+        self.assertEqual(orden.estado, "finalizado")
+        self.assertEqual(trabajo_realizado.mecanico, mecanico)
+        self.assertEqual(TrabajoRealizado.objects.filter(orden_trabajo=orden).count(), 1)
+        self.assertEqual(list(panel.context["turnos"]), [])
+        self.assertEqual(
+            list(panel.context["trabajos_realizados"]),
+            [trabajo_realizado],
+        )
+
+    def test_entregar_turno_con_datos_vehiculo_incompletos_crea_placeholder(self):
+        usuario_mecanico = get_user_model().objects.create_user(
+            username="mecanico_entrega_sin_vehiculo",
+        )
+        mecanico = Trabajador.objects.create(
+            nombre="Juan",
+            apellido="Mecánico",
+            usuario=usuario_mecanico,
+        )
+        cliente = Cliente.objects.create(
+            nombre="Ana",
+            apellido="Vehículo",
+            email="ana.vehiculo@example.com",
+            telefono="3511234567",
+        )
+        turno = Turno.objects.create(
+            usuario=cliente.usuario,
+            cliente=cliente,
+            trabajador=mecanico,
+            vehiculo="Fiat 600",
+            patente="ZX999CV",
+            servicio=self.trabajo,
+            fecha_turno=timezone.now() + timedelta(days=3),
+            estado="entregado",
+        )
+
+        registrar_trabajo_entregado(turno)
+
+        vehiculo = Vehiculo.objects.get(patente="ZX999CV")
+        self.assertEqual(vehiculo.marca, "No registrado")
+        self.assertEqual(vehiculo.modelo, "Fiat 600")
+        self.assertEqual(vehiculo.anio, 0)
+        self.assertNotIn("(0)", str(vehiculo))
+        self.assertTrue(
+            TrabajoRealizado.objects.filter(
+                orden_trabajo__turno=turno,
+            ).exists(),
+        )
 
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",

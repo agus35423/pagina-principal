@@ -55,10 +55,14 @@ from .models import (
     RepuestoUtilizado,
     Trabajador,
     Trabajo,
+    TrabajoRealizado,
     Turno,
     Vehiculo,
 )
-from .services import guardar_turno_con_disponibilidad
+from .services import (
+    guardar_turno_con_disponibilidad,
+    registrar_trabajo_entregado,
+)
 from .utils import (
     WhatsAppDeliveryError,
     enviar_correo_taller,
@@ -575,6 +579,25 @@ def estado_reparacion(request):
             "patente_buscada": patente_buscada,
         },
     )
+
+
+@login_required(login_url="login")
+def estado_reparacion_turno(request, turno_id):
+    turno = get_object_or_404(
+        Turno.objects.select_related("servicio"),
+        pk=turno_id,
+        usuario=request.user,
+    )
+    return render(
+        request,
+        "tallermami/estado_reparacion.html",
+        {
+            "turno": turno,
+            "estado_directo": True,
+        },
+    )
+
+
 # ==========================================================
 # PDF
 # ==========================================================
@@ -604,6 +627,7 @@ def descargar_excel_turnos(request):
         )
     from .utils import crear_excel_turnos
     turnos, busqueda = obtener_turnos_filtrados(request)
+    turnos = turnos.exclude(estado="entregado")
     archivo = crear_excel_turnos(turnos)
     response = HttpResponse(
         archivo.getvalue(),
@@ -906,15 +930,25 @@ def panel_mecanico(request):
         )
         return redirect("inicio")
 
-    turnos = Turno.objects.exclude(estado="cancelado")
+    turnos_base = Turno.objects.exclude(estado="cancelado")
     if not puede_gestionar_todos:
-        turnos = turnos.filter(trabajador=mecanico)
-    turnos = turnos.select_related(
+        turnos_base = turnos_base.filter(trabajador=mecanico)
+    turnos_base = turnos_base.select_related(
         "usuario",
         "cliente",
         "servicio",
         "vehiculo_asociado",
-    ).order_by("-fecha_turno")
+    )
+    turnos = turnos_base.exclude(estado="entregado").order_by("-fecha_turno")
+    trabajos_realizados = TrabajoRealizado.objects.select_related(
+        "orden_trabajo__turno",
+        "orden_trabajo__cliente",
+        "orden_trabajo__vehiculo",
+        "orden_trabajo__servicio",
+        "mecanico",
+    )
+    if not puede_gestionar_todos:
+        trabajos_realizados = trabajos_realizados.filter(mecanico=mecanico)
     return render(
         request,
         "tallermami/panel_mecanico.html",
@@ -923,6 +957,7 @@ def panel_mecanico(request):
             "es_admin": es_admin,
             "puede_gestionar_todos": puede_gestionar_todos,
             "turnos": turnos,
+            "trabajos_realizados": trabajos_realizados,
             "estados_mecanico": AvanceReparacionForm().fields["estado"].choices,
         },
     )
@@ -973,20 +1008,30 @@ def mecanico_actualizar_avance(request, turno_id):
     if cambio_porcentaje:
         turno.porcentaje_reparacion = porcentaje_nuevo
         campos_actualizados.append("porcentaje_reparacion")
+    if cambio_estado:
+        turno.estado = estado_nuevo
+        campos_actualizados.append("estado")
+    try:
+        with transaction.atomic():
+            turno.save(update_fields=campos_actualizados)
+            if cambio_estado and estado_nuevo == "entregado":
+                registrar_trabajo_entregado(turno)
+    except ValidationError as error:
+        messages.error(request, error.messages[0])
+        return redirect("panel_mecanico")
+
+    if cambio_porcentaje:
         messages.success(
             request,
             f"Se actualizó el avance del turno #{turno.pk} "
             f"al {porcentaje_nuevo}%.",
         )
     if cambio_estado:
-        turno.estado = estado_nuevo
-        campos_actualizados.append("estado")
         messages.success(
             request,
             f"Se actualizó el estado del turno #{turno.pk} "
             f"a {turno.get_estado_display()}.",
         )
-    turno.save(update_fields=campos_actualizados)
 
     if cambio_porcentaje:
         try:
@@ -1177,6 +1222,7 @@ def jefe_clientes(request):
 @user_passes_test(es_jefe_taller, login_url="inicio")
 def jefe_turnos(request):
     turnos, busqueda = obtener_turnos_filtrados(request)
+    turnos = turnos.exclude(estado="entregado")
     return render(
         request,
         "tallermami/seccion_panel.html",
@@ -1186,6 +1232,29 @@ def jefe_turnos(request):
             "titulo": "Turnos",
             "turnos": turnos,
             "busqueda": busqueda,
+        },
+    )
+
+
+@login_required(login_url="login")
+@user_passes_test(es_jefe_taller, login_url="inicio")
+def jefe_turnos_finalizados(request):
+    trabajos_realizados = TrabajoRealizado.objects.select_related(
+        "orden_trabajo__turno",
+        "orden_trabajo__cliente",
+        "orden_trabajo__vehiculo",
+        "orden_trabajo__servicio",
+        "mecanico",
+    )
+    return render(
+        request,
+        "tallermami/seccion_panel.html",
+        {
+            "panel": "jefe",
+            "seccion": "trabajos_realizados",
+            "titulo": "Trabajos realizados",
+            "trabajos_realizados": trabajos_realizados,
+            "busqueda": "",
         },
     )
 
@@ -1324,8 +1393,7 @@ def _estadisticas_taller_context():
     trabajadores_destacados = (
         Trabajador.objects.annotate(
             cantidad_trabajos=Count(
-                "turnos_asignados",
-                filter=Q(turnos_asignados__estado="entregado"),
+                "trabajos_realizados",
             )
         )
         .filter(cantidad_trabajos__gt=0)
@@ -1463,19 +1531,24 @@ def jefe_admin_formulario(request, app_label, model_name, object_id=None):
         )
         campo_estado.widget.choices = campo_estado.choices
     if request.method == "POST" and form.is_valid():
-        objeto = form.save(commit=False)
-        model_admin.save_model(request, objeto, form, cambio)
-        form.save_m2m()
-        messages.success(
-            request,
-            f"{model._meta.verbose_name.capitalize()} "
-            f"{'actualizado' if cambio else 'creado'} correctamente.",
-        )
-        return redirect(
-            "jefe_admin_lista",
-            app_label=app_label,
-            model_name=model_name,
-        )
+        try:
+            with transaction.atomic():
+                objeto = form.save(commit=False)
+                model_admin.save_model(request, objeto, form, cambio)
+                form.save_m2m()
+        except ValidationError as error:
+            form.add_error(None, error.messages[0])
+        else:
+            messages.success(
+                request,
+                f"{model._meta.verbose_name.capitalize()} "
+                f"{'actualizado' if cambio else 'creado'} correctamente.",
+            )
+            return redirect(
+                "jefe_admin_lista",
+                app_label=app_label,
+                model_name=model_name,
+            )
 
     for field in form.fields.values():
         if field.widget.__class__.__name__ == "CheckboxInput":
@@ -1647,6 +1720,7 @@ def secretario_presupuesto_nuevo(request):
 @user_passes_test(es_secretario, login_url="inicio")
 def secretario_turnos(request):
     turnos, busqueda = obtener_turnos_filtrados(request)
+    turnos = turnos.exclude(estado="entregado")
     cliente_dni = Cliente.objects.filter(
         email__iexact=OuterRef("usuario__email"),
     ).values("dni")[:1]
@@ -1662,6 +1736,31 @@ def secretario_turnos(request):
             "busqueda": busqueda,
         },
     )
+
+
+@login_required(login_url="login")
+@user_passes_test(es_secretario, login_url="inicio")
+def secretario_turnos_finalizados(request):
+    trabajos_realizados = TrabajoRealizado.objects.select_related(
+        "orden_trabajo__turno",
+        "orden_trabajo__cliente",
+        "orden_trabajo__vehiculo",
+        "orden_trabajo__servicio",
+        "mecanico",
+    )
+    return render(
+        request,
+        "tallermami/seccion_panel.html",
+        {
+            "panel": "secretario",
+            "seccion": "trabajos_realizados",
+            "titulo": "Trabajos realizados",
+            "trabajos_realizados": trabajos_realizados,
+            "busqueda": "",
+        },
+    )
+
+
 @login_required(login_url="login")
 @user_passes_test(es_secretario, login_url="inicio")
 
@@ -1932,6 +2031,7 @@ def secretario_cliente_editar(request, cliente_id):
 def secretario_turno_editar(request, turno_id):
     turno = get_object_or_404(Turno, pk=turno_id)
     porcentaje_anterior = turno.porcentaje_reparacion
+    estado_anterior = turno.estado
 
     form = TurnoForm(
         request.POST or None,
@@ -1946,8 +2046,13 @@ def secretario_turno_editar(request, turno_id):
                     form.cleaned_data["fecha_turno"],
                 )
                 form.save()
+                if (
+                    estado_anterior != "entregado"
+                    and turno_editado.estado == "entregado"
+                ):
+                    registrar_trabajo_entregado(turno_editado)
         except ValidationError as error:
-            form.add_error("fecha_turno", error.messages[0])
+            form.add_error(None, error.messages[0])
             return render(
                 request,
                 "tallermami/formulario_gestion.html",

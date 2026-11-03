@@ -13,7 +13,10 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
 from .forms import TurnoAdminForm
-from .services import guardar_turno_con_disponibilidad
+from .services import (
+    guardar_turno_con_disponibilidad,
+    registrar_trabajo_entregado,
+)
 from .utils import (
     WhatsAppDeliveryError,
     enviar_correo_taller,
@@ -326,6 +329,9 @@ class TurnoAdmin(admin.ModelAdmin):
 
     actions = (exportar_turnos_excel,)
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).exclude(estado="entregado")
+
     @admin.display(description="Cliente")
     def mostrar_cliente(self, obj):
         if obj.usuario:
@@ -338,14 +344,17 @@ class TurnoAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         porcentaje_anterior = None
         fecha_anterior = None
+        estado_anterior = None
         if change:
             turno_anterior = Turno.objects.filter(pk=obj.pk).values(
                 "porcentaje_reparacion",
                 "fecha_turno",
+                "estado",
             ).first()
             if turno_anterior:
                 porcentaje_anterior = turno_anterior["porcentaje_reparacion"]
                 fecha_anterior = turno_anterior["fecha_turno"]
+                estado_anterior = turno_anterior["estado"]
         with transaction.atomic():
             super().save_model(request, obj, form, change)
             if not change or obj.fecha_turno != fecha_anterior:
@@ -353,6 +362,8 @@ class TurnoAdmin(admin.ModelAdmin):
                     obj,
                     obj.fecha_turno,
                 )
+            if obj.estado == "entregado" and estado_anterior != "entregado":
+                registrar_trabajo_entregado(obj)
 
         if (
             porcentaje_anterior is not None

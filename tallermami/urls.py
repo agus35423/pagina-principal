@@ -101,6 +101,11 @@ urlpatterns = [
         name="jefe_turnos",
     ),
     path(
+        "jefe-taller/turnos-finalizados/",
+        views.jefe_turnos_finalizados,
+        name="jefe_turnos_finalizados",
+    ),
+    path(
         "jefe-taller/administracion/",
         views.jefe_admin_inicio,
         name="jefe_admin_inicio",
@@ -160,6 +165,11 @@ urlpatterns = [
         "secretario/turnos/",
         views.secretario_turnos,
         name="secretario_turnos",
+    ),
+    path(
+        "secretario/turnos-finalizados/",
+        views.secretario_turnos_finalizados,
+        name="secretario_turnos_finalizados",
     ),
     
     path(
@@ -260,6 +270,11 @@ urlpatterns = [
         "estado-reparacion/",
         views.estado_reparacion,
         name="estado_reparacion",
+    ),
+    path(
+        "estado-reparacion/turno/<int:turno_id>/",
+        views.estado_reparacion_turno,
+        name="estado_reparacion_turno",
     ),
 
     # ======================================================

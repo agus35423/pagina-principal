@@ -8,7 +8,11 @@ Molina Henze {% endblock %} {% block content %}
     <h1>Estado de mi vehículo</h1>
 
     <p>
-      Consultá el estado de reparación ingresando la patente de tu vehículo.
+      {% if estado_directo %}
+        Consultá el avance actualizado del vehículo asociado a tu turno.
+      {% else %}
+        Consultá el estado de reparación ingresando la patente de tu vehículo.
+      {% endif %}
     </p>
   </div>
 </section>
@@ -17,6 +21,7 @@ Molina Henze {% endblock %} {% block content %}
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-lg-7">
+        {% if not estado_directo %}
         <div class="tracking-search-card">
           <div class="tracking-search-icon">
             <i class="fa-solid fa-car"></i>
@@ -51,6 +56,11 @@ Molina Henze {% endblock %} {% block content %}
             </div>
           </form>
         </div>
+        {% else %}
+          <a href="{% url 'mis_turnos' %}" class="btn btn-outline-secondary btn-sm mb-3">
+            ← Volver a mis turnos
+          </a>
+        {% endif %}
 
         {% if turno %}
 

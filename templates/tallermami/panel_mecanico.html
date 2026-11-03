@@ -4,6 +4,10 @@
 
 {% block content %}
 <main class="container py-5">
+    <nav class="d-flex flex-wrap gap-2 mb-4" aria-label="Secciones de turnos">
+        <a class="btn btn-outline-primary" href="#turnos-activos">Turnos activos</a>
+        <a class="btn btn-outline-success" href="#trabajos-realizados">Trabajos realizados</a>
+    </nav>
     <section class="mb-4">
         <span class="text-uppercase text-secondary small">Taller Molina Henze · Reparaciones</span>
         <h1 class="mt-2">Panel del mecánico</h1>
@@ -21,6 +25,8 @@
         </p>
     </section>
 
+    <section id="turnos-activos" aria-labelledby="turnos-activos-titulo">
+    <h2 id="turnos-activos-titulo" class="h4 mb-3">Turnos activos</h2>
     {% if turnos %}
         <div class="row g-4">
             {% for turno in turnos %}
@@ -98,5 +104,40 @@
             No tenés turnos activos asignados por el momento.
         </div>
     {% endif %}
+    </section>
+
+    <section id="trabajos-realizados" class="mt-5" aria-labelledby="trabajos-realizados-titulo">
+        <h2 id="trabajos-realizados-titulo" class="h4 mb-3">Trabajos realizados</h2>
+        {% if trabajos_realizados %}
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Vehículo</th>
+                            <th>Servicio</th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trabajo_realizado in trabajos_realizados %}
+                            <tr>
+                                <td>{{ trabajo_realizado.fecha|date:"d/m/Y" }}</td>
+                                <td>{{ trabajo_realizado.orden_trabajo.cliente }}</td>
+                                <td>{{ trabajo_realizado.orden_trabajo.vehiculo }}</td>
+                                <td>{{ trabajo_realizado.orden_trabajo.servicio }}</td>
+                                <td>{{ trabajo_realizado.descripcion }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-light border" role="status">
+                Todavía no hay trabajos realizados registrados.
+            </div>
+        {% endif %}
+    </section>
 </main>
 {% endblock %}

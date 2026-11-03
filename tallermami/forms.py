@@ -3,6 +3,7 @@ from datetime import date
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.db.models import Q
 from django.forms import inlineformset_factory
 from django.utils import timezone
 
@@ -14,6 +15,7 @@ from .models import (
     RepuestoPresupuestado,
     Turno,
     Trabajo,
+    Vehiculo,
 )
 
 
@@ -570,6 +572,59 @@ class TurnoForm(forms.ModelForm):
         fecha = self.cleaned_data.get("fecha_turno")
         validar_fecha_y_hora_turno(fecha, self.instance)
         return fecha
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if (
+            cleaned_data.get("estado") != "entregado"
+            or self.instance.estado == "entregado"
+        ):
+            return cleaned_data
+
+        trabajador = cleaned_data.get(
+            "trabajador",
+            self.instance.trabajador,
+        )
+        if trabajador is None:
+            self.add_error(
+                "trabajador",
+                "Asigná un trabajador antes de entregar el vehículo.",
+            )
+
+        cliente = cleaned_data.get("cliente", self.instance.cliente)
+        if cliente is None and self.instance.usuario_id:
+            criterio_cliente = Q(
+                usuario=self.instance.usuario,
+            )
+            if self.instance.usuario.email:
+                criterio_cliente |= Q(
+                    email__iexact=self.instance.usuario.email.strip(),
+                )
+            cliente = Cliente.objects.filter(criterio_cliente).first()
+        if cliente is None:
+            self.add_error(
+                None,
+                "Asociá el turno a un cliente antes de entregar el vehículo.",
+            )
+
+        vehiculo = cleaned_data.get(
+            "vehiculo_asociado",
+            self.instance.vehiculo_asociado,
+        )
+        patente = cleaned_data.get("patente", self.instance.patente)
+        if vehiculo is None and patente:
+            vehiculo = Vehiculo.objects.filter(
+                patente__iexact=patente.strip(),
+            ).first()
+        if vehiculo is None and not (
+            patente and self.instance.vehiculo.strip()
+        ):
+            self.add_error(
+                "patente",
+                "Registrá el vehículo antes de entregar el trabajo.",
+            )
+
+        return cleaned_data
 
 
 class TurnoAdminForm(TurnoForm):

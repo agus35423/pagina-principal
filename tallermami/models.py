@@ -235,7 +235,10 @@ class Vehiculo(models.Model):
     )
 
     def __str__(self):
-        return f"{self.marca} {self.modelo} ({self.anio}) - {self.patente}"
+        detalle = f"{self.marca} {self.modelo}"
+        if self.anio:
+            detalle += f" ({self.anio})"
+        return f"{detalle} - {self.patente}"
 
     class Meta:
         verbose_name = "Vehículo"
