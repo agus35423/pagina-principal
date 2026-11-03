@@ -273,6 +273,16 @@ class SolicitarTurnoForm(forms.ModelForm):
         return fecha
 
 
+ESTADOS_MECANICO = {
+    "recibido",
+    "diagnostico",
+    "reparacion",
+    "esperando_repuesto",
+    "finalizado",
+    "entregado",
+}
+
+
 class AvanceReparacionForm(forms.Form):
     porcentaje_reparacion = forms.IntegerField(
         label="Avance de reparación",
@@ -292,6 +302,19 @@ class AvanceReparacionForm(forms.Form):
             "max_value": "El avance no puede superar el 100%.",
             "invalid": "Ingresá un porcentaje entero entre 0 y 100.",
         },
+    )
+    estado = forms.ChoiceField(
+        choices=[
+            ("", "Sin cambios"),
+            *[
+                (valor, etiqueta)
+                for valor, etiqueta in Turno.ESTADOS
+                if valor in ESTADOS_MECANICO
+            ],
+        ],
+        required=False,
+        label="Estado de reparación",
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
 
 

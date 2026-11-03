@@ -87,7 +87,12 @@ def inicio(request):
     return render(
         request,
         "tallermami/inicio.html",
-        {"trabajos": trabajos},
+        {
+            "trabajos": trabajos,
+            "accesos_personal_disponibles": any(
+                obtener_accesos_personal(request.user).values()
+            ),
+        },
     )
 # ==========================================================
 # LOGIN
@@ -831,6 +836,33 @@ def es_secretario(user):
     )
 
 
+def obtener_accesos_personal(user):
+    return {
+        "jefe": es_jefe_taller(user),
+        "secretario": es_secretario(user),
+        "mecanico": es_jefe_taller(user)
+        or es_secretario(user)
+        or (
+            user.is_authenticated
+            and Trabajador.objects.filter(usuario=user).exists()
+        ),
+        "desarrollador": user.is_authenticated
+        and (user.is_staff or user.is_superuser),
+    }
+
+
+@login_required(login_url="login")
+def accesos_personal(request):
+    accesos = obtener_accesos_personal(request.user)
+    if not any(accesos.values()):
+        return redirect("inicio")
+    return render(
+        request,
+        "tallermami/accesos_personal.html",
+        {"accesos": accesos},
+    )
+
+
 @login_required(login_url="login")
 def panel_jefe_compat(request):
     if not es_jefe_taller(request.user):
@@ -860,7 +892,12 @@ def panel_jefe_compat(request):
 def panel_mecanico(request):
     mecanico = Trabajador.objects.filter(usuario=request.user).first()
     es_admin = es_administrador(request.user)
-    if mecanico is None and not es_admin:
+    puede_gestionar_todos = (
+        es_admin
+        or es_jefe_taller(request.user)
+        or es_secretario(request.user)
+    )
+    if mecanico is None and not puede_gestionar_todos:
         messages.error(
             request,
             "Tu cuenta todavía no está asociada a un mecánico. "
@@ -870,7 +907,7 @@ def panel_mecanico(request):
         return redirect("inicio")
 
     turnos = Turno.objects.exclude(estado="cancelado")
-    if not es_admin:
+    if not puede_gestionar_todos:
         turnos = turnos.filter(trabajador=mecanico)
     turnos = turnos.select_related(
         "usuario",
@@ -884,7 +921,9 @@ def panel_mecanico(request):
         {
             "mecanico": mecanico,
             "es_admin": es_admin,
+            "puede_gestionar_todos": puede_gestionar_todos,
             "turnos": turnos,
+            "estados_mecanico": AvanceReparacionForm().fields["estado"].choices,
         },
     )
 
@@ -893,7 +932,12 @@ def panel_mecanico(request):
 def mecanico_actualizar_avance(request, turno_id):
     mecanico = Trabajador.objects.filter(usuario=request.user).first()
     es_admin = es_administrador(request.user)
-    if mecanico is None and not es_admin:
+    puede_gestionar_todos = (
+        es_admin
+        or es_jefe_taller(request.user)
+        or es_secretario(request.user)
+    )
+    if mecanico is None and not puede_gestionar_todos:
         messages.error(
             request,
             "Tu cuenta todavía no está asociada a un mecánico. "
@@ -906,81 +950,100 @@ def mecanico_actualizar_avance(request, turno_id):
         return redirect("panel_mecanico")
 
     turnos = Turno.objects.select_related("usuario", "trabajador")
-    if not es_admin:
+    if not puede_gestionar_todos:
         turnos = turnos.filter(trabajador=mecanico)
     turno = get_object_or_404(turnos, pk=turno_id)
     form = AvanceReparacionForm(request.POST)
     if not form.is_valid():
-        for error in form.errors.get("porcentaje_reparacion", []):
-            messages.error(request, error)
+        for errores_campo in form.errors.values():
+            for error in errores_campo:
+                messages.error(request, error)
         return redirect("panel_mecanico")
 
     porcentaje_anterior = turno.porcentaje_reparacion
     porcentaje_nuevo = form.cleaned_data["porcentaje_reparacion"]
-    if porcentaje_nuevo == porcentaje_anterior:
-        messages.info(request, "El porcentaje no tuvo cambios.")
+    estado_nuevo = form.cleaned_data["estado"]
+    cambio_porcentaje = porcentaje_nuevo != porcentaje_anterior
+    cambio_estado = bool(estado_nuevo and estado_nuevo != turno.estado)
+    if not cambio_porcentaje and not cambio_estado:
+        messages.info(request, "No hay cambios para guardar.")
         return redirect("panel_mecanico")
 
-    turno.porcentaje_reparacion = porcentaje_nuevo
-    turno.save(update_fields=["porcentaje_reparacion"])
-    messages.success(
-        request,
-        f"Se actualizó el avance del turno #{turno.pk} "
-        f"al {porcentaje_nuevo}%.",
-    )
+    campos_actualizados = []
+    if cambio_porcentaje:
+        turno.porcentaje_reparacion = porcentaje_nuevo
+        campos_actualizados.append("porcentaje_reparacion")
+        messages.success(
+            request,
+            f"Se actualizó el avance del turno #{turno.pk} "
+            f"al {porcentaje_nuevo}%.",
+        )
+    if cambio_estado:
+        turno.estado = estado_nuevo
+        campos_actualizados.append("estado")
+        messages.success(
+            request,
+            f"Se actualizó el estado del turno #{turno.pk} "
+            f"a {turno.get_estado_display()}.",
+        )
+    turno.save(update_fields=campos_actualizados)
 
-    try:
-        resultado = notificar_avance_reparacion(
-            turno,
-            porcentaje_anterior,
-            request,
-        )
-    except Exception:
-        logger.exception(
-            "No se pudo enviar el aviso por correo del avance "
-            "del turno %s desde el panel del mecánico.",
-            turno.pk,
-        )
-        messages.warning(
-            request,
-            "El avance se guardó, pero no se pudo enviar el correo "
-            "al cliente.",
-        )
-    else:
-        if resultado == "sin_correo":
+    if cambio_porcentaje:
+        try:
+            resultado = notificar_avance_reparacion(
+                turno,
+                porcentaje_anterior,
+                request,
+            )
+        except Exception:
+            logger.exception(
+                "No se pudo enviar el aviso por correo del avance "
+                "del turno %s desde el panel del mecánico.",
+                turno.pk,
+            )
             messages.warning(
                 request,
-                "El avance se guardó, pero el cliente no tiene "
-                "un correo registrado.",
+                "El avance se guardó, pero no se pudo enviar el correo "
+                "al cliente.",
             )
-        elif resultado == "sin_enviar":
+        else:
+            if resultado == "sin_correo":
+                messages.warning(
+                    request,
+                    "El avance se guardó, pero el cliente no tiene "
+                    "un correo registrado.",
+                )
+            elif resultado == "sin_enviar":
+                messages.warning(
+                    request,
+                    "El avance se guardó, pero el servidor no confirmó "
+                    "el envío del correo.",
+                )
+            elif resultado == "enviado":
+                messages.success(request, "Se notificó al cliente por correo.")
+
+        try:
+            resultado_whatsapp = enviar_whatsapp_a_cliente(
+                turno,
+                mensaje_avance_whatsapp(turno, porcentaje_anterior),
+            )
+        except (ImproperlyConfigured, WhatsAppDeliveryError):
+            logger.exception(
+                "No se pudo enviar el aviso por WhatsApp del avance "
+                "del turno %s desde el panel del mecánico.",
+                turno.pk,
+            )
             messages.warning(
                 request,
-                "El avance se guardó, pero el servidor no confirmó "
-                "el envío del correo.",
+                "El avance se guardó, pero no se pudo enviar el aviso "
+                "por WhatsApp.",
             )
-        elif resultado == "enviado":
-            messages.success(request, "Se notificó al cliente por correo.")
-
-    try:
-        resultado_whatsapp = enviar_whatsapp_a_cliente(
-            turno,
-            mensaje_avance_whatsapp(turno, porcentaje_anterior),
-        )
-    except (ImproperlyConfigured, WhatsAppDeliveryError):
-        logger.exception(
-            "No se pudo enviar el aviso por WhatsApp del avance "
-            "del turno %s desde el panel del mecánico.",
-            turno.pk,
-        )
-        messages.warning(
-            request,
-            "El avance se guardó, pero no se pudo enviar el aviso "
-            "por WhatsApp.",
-        )
-    else:
-        if resultado_whatsapp == "enviado":
-            messages.success(request, "También se notificó al cliente por WhatsApp.")
+        else:
+            if resultado_whatsapp == "enviado":
+                messages.success(
+                    request,
+                    "También se notificó al cliente por WhatsApp.",
+                )
 
     return redirect("panel_mecanico")
 
@@ -1053,6 +1116,21 @@ def vista_secretario(request):
             "presupuestos": presupuestos,
         },
     )
+
+
+@login_required(login_url="login")
+@user_passes_test(es_secretario, login_url="inicio")
+def secretario_estadisticas(request):
+    return render(
+        request,
+        "tallermami/jefe_admin_estadisticas.html",
+        {
+            **_estadisticas_taller_context(),
+            "url_volver": "vista_secretario",
+        },
+    )
+
+
 # ==========================================================
 # SECCIONES DEL JEFE DE TALLER
 # ==========================================================
@@ -1230,25 +1308,44 @@ def jefe_admin_inicio(request):
             str(model._meta.verbose_name_plural),
         ),
     )
+    return render(
+        request,
+        "tallermami/jefe_admin_inicio.html",
+        {"modelos": [_modelo_contexto(model) for model in modelos]},
+    )
+
+
+def _estadisticas_taller_context():
     clientes_recurrentes = (
-        Cliente.objects.annotate(cantidad_trabajos=Count("ordenes_trabajo"))
-        .filter(cantidad_trabajos__gt=0)
-        .order_by("-cantidad_trabajos", "apellido", "nombre")[:5]
+        Cliente.objects.annotate(cantidad_turnos=Count("turnos"))
+        .filter(cantidad_turnos__gt=0)
+        .order_by("-cantidad_turnos", "apellido", "nombre")[:5]
     )
     trabajadores_destacados = (
         Trabajador.objects.annotate(
-            cantidad_trabajos=Count("trabajos_realizados")
+            cantidad_trabajos=Count(
+                "turnos_asignados",
+                filter=Q(turnos_asignados__estado="entregado"),
+            )
         )
         .filter(cantidad_trabajos__gt=0)
         .order_by("-cantidad_trabajos", "apellido", "nombre")[:5]
     )
+    return {
+        "clientes_recurrentes": clientes_recurrentes,
+        "trabajadores_destacados": trabajadores_destacados,
+    }
+
+
+@login_required(login_url="login")
+@user_passes_test(es_jefe_taller, login_url="inicio")
+def jefe_admin_estadisticas(request):
     return render(
         request,
-        "tallermami/jefe_admin_inicio.html",
+        "tallermami/jefe_admin_estadisticas.html",
         {
-            "modelos": [_modelo_contexto(model) for model in modelos],
-            "clientes_recurrentes": clientes_recurrentes,
-            "trabajadores_destacados": trabajadores_destacados,
+            **_estadisticas_taller_context(),
+            "url_volver": "jefe_admin_inicio",
         },
     )
 

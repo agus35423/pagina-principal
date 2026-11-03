@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Accesos de personal | Taller Molina Henze{% endblock %}
+
+{% block content %}
+<section class="role-access-shell">
+    <div class="container py-5 role-access-page">
+        <header class="role-access-header">
+            <div class="role-access-header-copy">
+                <span class="role-access-eyebrow">
+                    <i class="fa-solid fa-gear me-2" aria-hidden="true"></i>
+                    TALLER MOLINA HENZE · EQUIPO
+                </span>
+                <h1>Tu espacio de trabajo</h1>
+                <p>Elegí un panel para acceder a las herramientas de tu área.</p>
+            </div>
+            <div class="role-access-header-mark" aria-hidden="true">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+            </div>
+        </header>
+
+        <div class="role-access-section-heading">
+            <div>
+                <span class="role-access-section-eyebrow">PANELES DISPONIBLES</span>
+                <h2>Seleccioná un área</h2>
+            </div>
+            <span class="role-access-secure">
+                <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                Acceso según tu cuenta
+            </span>
+        </div>
+
+        <section class="row g-4 role-access-grid" aria-label="Vistas disponibles">
+            {% if accesos.jefe %}
+            <div class="col-sm-6 col-xl-3">
+                <article class="role-access-card role-access-card-manager">
+                    <span class="role-access-card-top">
+                        <span class="role-access-icon"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></span>
+                        <span class="role-access-card-tag">GESTIÓN</span>
+                    </span>
+                    <span class="role-access-title">Panel del jefe de taller</span>
+                    <span class="role-access-description">Administrá las operaciones y recursos del taller.</span>
+                    <a class="role-access-action" href="{% url 'vista_jefe_taller' %}">
+                        Abrir panel <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                    <div class="role-access-shortcuts" aria-label="Accesos rápidos de jefe de taller">
+                        <a href="{% url 'jefe_trabajos' %}"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i> Trabajos</a>
+                        <a href="{% url 'jefe_trabajadores' %}"><i class="fa-solid fa-people-group" aria-hidden="true"></i> Equipo</a>
+                        <a href="{% url 'jefe_clientes' %}"><i class="fa-solid fa-users" aria-hidden="true"></i> Clientes</a>
+                        <a href="{% url 'jefe_turnos' %}"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Turnos</a>
+                    </div>
+                </article>
+            </div>
+            {% endif %}
+
+            {% if accesos.secretario %}
+            <div class="col-sm-6 col-xl-3">
+                <article class="role-access-card role-access-card-secretary">
+                    <span class="role-access-card-top">
+                        <span class="role-access-icon"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i></span>
+                        <span class="role-access-card-tag">ATENCIÓN</span>
+                    </span>
+                    <span class="role-access-title">Panel del secretario</span>
+                    <span class="role-access-description">Organizá clientes, turnos y presupuestos.</span>
+                    <a class="role-access-action" href="{% url 'vista_secretario' %}">
+                        Abrir panel <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                    <div class="role-access-shortcuts" aria-label="Accesos rápidos de secretario">
+                        <a href="{% url 'secretario_clientes' %}"><i class="fa-solid fa-users" aria-hidden="true"></i> Clientes</a>
+                        <a href="{% url 'secretario_presupuestos' %}"><i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i> Presupuestos</a>
+                        <a href="{% url 'secretario_turnos' %}"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Turnos</a>
+                    </div>
+                </article>
+            </div>
+            {% endif %}
+
+            {% if accesos.mecanico %}
+            <div class="col-sm-6 col-xl-3">
+                <article class="role-access-card role-access-card-mechanic">
+                    <span class="role-access-card-top">
+                        <span class="role-access-icon"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i></span>
+                        <span class="role-access-card-tag">TALLER</span>
+                    </span>
+                    <span class="role-access-title">Panel del mecánico</span>
+                    <span class="role-access-description">Consultá y actualizá el avance de las reparaciones.</span>
+                    <a class="role-access-action" href="{% url 'panel_mecanico' %}">
+                        Ver reparaciones <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                </article>
+            </div>
+            {% endif %}
+
+            {% if accesos.desarrollador %}
+            <div class="col-sm-6 col-xl-3">
+                <article class="role-access-card role-access-card-developer">
+                    <span class="role-access-card-top">
+                        <span class="role-access-icon"><i class="fa-solid fa-code" aria-hidden="true"></i></span>
+                        <span class="role-access-card-tag">SISTEMA</span>
+                    </span>
+                    <span class="role-access-title">Panel del desarrollador</span>
+                    <span class="role-access-description">Administrá el sitio y sus herramientas internas.</span>
+                    <a class="role-access-action" href="{% url 'admin:index' %}">
+                        Administración del sitio <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                    <div class="role-access-shortcuts" aria-label="Accesos rápidos de administración">
+                        <a href="{% url 'jefe_admin_inicio' %}"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i> Gestión del taller</a>
+                    </div>
+                </article>
+            </div>
+            {% endif %}
+        </section>
+
+        <p class="role-access-note">
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+            Si necesitás otro acceso, comunicate con el administrador del taller.
+        </p>
+    </div>
+</section>
+{% endblock %}

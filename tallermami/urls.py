@@ -27,6 +27,11 @@ urlpatterns = [
     # PANELES
     # ======================================================
     path(
+        "accesos-personal/",
+        views.accesos_personal,
+        name="accesos_personal",
+    ),
+    path(
         "mecanico/",
         views.panel_mecanico,
         name="panel_mecanico",
@@ -101,6 +106,11 @@ urlpatterns = [
         name="jefe_admin_inicio",
     ),
     path(
+        "jefe-taller/administracion/estadisticas/",
+        views.jefe_admin_estadisticas,
+        name="jefe_admin_estadisticas",
+    ),
+    path(
         "jefe-taller/administracion/<str:app_label>/<str:model_name>/",
         views.jefe_admin_lista,
         name="jefe_admin_lista",
@@ -130,6 +140,11 @@ urlpatterns = [
         "secretario/",
         views.vista_secretario,
         name="vista_secretario",
+    ),
+    path(
+        "secretario/estadisticas/",
+        views.secretario_estadisticas,
+        name="secretario_estadisticas",
     ),
     path(
     "secretario/presupuestos/",

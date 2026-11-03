@@ -41,6 +41,16 @@ Henze | Mecánica Automotriz {% endblock %} {% block content %}
           <i class="fa-solid fa-magnifying-glass me-2"></i>
           Consultar vehículo
         </a>
+
+        {% if user.is_authenticated and accesos_personal_disponibles %}
+        <a
+          href="{% url 'accesos_personal' %}"
+          class="btn btn-outline-light btn-lg"
+        >
+          <i class="fa-solid fa-table-cells-large me-2" aria-hidden="true"></i>
+          Accesos de personal
+        </a>
+        {% endif %}
       </div>
 
       <div class="hero-features">

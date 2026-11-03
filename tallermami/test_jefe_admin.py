@@ -7,7 +7,7 @@ from django.contrib.auth.models import Group
 from django import forms
 from django.core import mail
 from django.core.management import call_command
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from unittest.mock import patch
@@ -31,6 +31,7 @@ from .utils import (
     generar_pdf_turno,
     normalizar_telefono_whatsapp,
 )
+from .admin import TurnoAdmin
 
 
 class AdministracionJefeTallerTests(TestCase):
@@ -51,6 +52,8 @@ class AdministracionJefeTallerTests(TestCase):
         self.assertContains(response, "Trabajos")
         self.assertContains(response, "Usuarios")
         self.assertContains(response, "Grupos")
+        self.assertContains(response, "Estadísticas")
+        self.assertNotContains(response, "Clientes más recurrentes")
 
     def test_panel_muestra_estadisticas_de_clientes_y_trabajadores(self):
         cliente_frecuente = Cliente.objects.create(
@@ -86,6 +89,21 @@ class AdministracionJefeTallerTests(TestCase):
                 patente=f"AB123C{numero}",
                 cliente=cliente,
             )
+            trabajador = (
+                mecanico_destacado if numero < 3 else otro_mecanico
+            )
+            Turno.objects.create(
+                cliente=cliente,
+                trabajador=trabajador,
+                vehiculo="Ford Focus (2018)",
+                marca="Ford",
+                modelo="Focus",
+                anio=2018,
+                patente=f"AB123C{numero}",
+                servicio=trabajo,
+                fecha_turno=timezone.now() + timedelta(days=numero),
+                estado="entregado" if numero < 3 else "finalizado",
+            )
             orden = OrdenTrabajo.objects.create(
                 vehiculo=vehiculo,
                 cliente=cliente,
@@ -110,7 +128,20 @@ class AdministracionJefeTallerTests(TestCase):
                     mecanico=mecanico_destacado,
                 )
 
-        response = self.client.get(reverse("jefe_admin_inicio"))
+        Turno.objects.create(
+            cliente=cliente_frecuente,
+            trabajador=otro_mecanico,
+            vehiculo="Ford Fiesta (2020)",
+            marca="Ford",
+            modelo="Fiesta",
+            anio=2020,
+            patente="ZX987YU",
+            servicio=trabajo,
+            fecha_turno=timezone.now() + timedelta(days=4),
+            estado="pendiente",
+        )
+
+        response = self.client.get(reverse("jefe_admin_estadisticas"))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
@@ -118,8 +149,8 @@ class AdministracionJefeTallerTests(TestCase):
             cliente_frecuente,
         )
         self.assertEqual(
-            response.context["clientes_recurrentes"][0].cantidad_trabajos,
-            2,
+            response.context["clientes_recurrentes"][0].cantidad_turnos,
+            3,
         )
         self.assertEqual(
             response.context["trabajadores_destacados"][0],
@@ -127,10 +158,14 @@ class AdministracionJefeTallerTests(TestCase):
         )
         self.assertEqual(
             response.context["trabajadores_destacados"][0].cantidad_trabajos,
-            3,
+            2,
         )
-        self.assertContains(response, "Clientes más recurrentes")
-        self.assertContains(response, "Trabajadores con más trabajos")
+        self.assertContains(response, "Estadísticas de clientes")
+        self.assertContains(response, "Estadísticas de trabajadores")
+        self.assertContains(
+            self.client.get(reverse("jefe_admin_inicio")),
+            "Consultar turnos de clientes y trabajos entregados.",
+        )
 
     def test_panel_principal_enlaza_a_la_administracion(self):
         response = self.client.get(reverse("vista_jefe_taller"))
@@ -267,6 +302,38 @@ class AdministracionJefeTallerTests(TestCase):
         self.assertEqual(response.status_code, 302)
         turno.refresh_from_db()
         self.assertEqual(turno.estado, "reparacion")
+
+    def test_editar_turno_con_horario_duplicado_no_falla_al_cambiar_estado(self):
+        trabajo = Trabajo.objects.create(nombre="Revisión")
+        fecha_turno = timezone.now() + timedelta(days=5)
+        turno = Turno.objects.create(
+            vehiculo="Toyota Corolla (2020)",
+            marca="Toyota",
+            modelo="Corolla",
+            anio=2020,
+            patente="AB123CD",
+            servicio=trabajo,
+            fecha_turno=fecha_turno,
+        )
+        Turno.objects.create(
+            vehiculo="Ford Focus (2018)",
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="CD456EF",
+            servicio=trabajo,
+            fecha_turno=fecha_turno,
+        )
+        turno.estado = "reparacion"
+        request = RequestFactory().post(reverse("admin:tallermami_turno_changelist"))
+        request.user = self.jefe
+        turno_admin = TurnoAdmin(Turno, admin.site)
+
+        turno_admin.save_model(request, turno, form=None, change=True)
+
+        turno.refresh_from_db()
+        self.assertEqual(turno.estado, "reparacion")
+        self.assertEqual(turno.fecha_turno, fecha_turno)
 
     def test_panel_de_turnos_del_jefe_enlaza_a_editar_cada_turno(self):
         trabajo = Trabajo.objects.create(nombre="Revisión")
@@ -848,6 +915,54 @@ class PanelSecretarioTests(TestCase):
         self.assertContains(response, reverse("secretario_clientes"))
         self.assertContains(response, reverse("secretario_presupuestos"))
         self.assertContains(response, reverse("secretario_turnos"))
+        self.assertContains(response, reverse("secretario_estadisticas"))
+
+    def test_secretario_consulta_estadisticas_separadas_de_clientes_y_trabajadores(self):
+        secretaria = get_user_model().objects.create_user(
+            username="secretaria_estadisticas",
+        )
+        secretaria.groups.add(Group.objects.create(name="Secretario"))
+        cliente = Cliente.objects.create(
+            nombre="Ana",
+            apellido="Cliente",
+            email="ana.estadisticas@example.com",
+            telefono="3511234567",
+        )
+        trabajador = Trabajador.objects.create(
+            nombre="Mario",
+            apellido="Mecánico",
+        )
+        servicio = Trabajo.objects.create(nombre="Reparación")
+
+        for numero, estado in enumerate(("entregado", "pendiente"), start=1):
+            Turno.objects.create(
+                cliente=cliente,
+                trabajador=trabajador,
+                vehiculo="Ford Focus (2018)",
+                marca="Ford",
+                modelo="Focus",
+                anio=2018,
+                patente=f"AB123C{numero}",
+                servicio=servicio,
+                fecha_turno=timezone.now() + timedelta(days=numero),
+                estado=estado,
+            )
+
+        self.client.force_login(secretaria)
+        response = self.client.get(reverse("secretario_estadisticas"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["clientes_recurrentes"][0].cantidad_turnos,
+            2,
+        )
+        self.assertEqual(
+            response.context["trabajadores_destacados"][0].cantidad_trabajos,
+            1,
+        )
+        self.assertContains(response, "Estadísticas de clientes")
+        self.assertContains(response, "Estadísticas de trabajadores")
+        self.assertContains(response, reverse("vista_secretario"))
 
 
 class PasswordResetTests(TestCase):
@@ -999,15 +1114,35 @@ class AvanceTurnoTests(TestCase):
         )
 
         accesos = (
-            (usuario_jefe, "Panel del jefe de taller", "vista_jefe_taller"),
+            (
+                usuario_jefe,
+                "Panel del jefe de taller",
+                "vista_jefe_taller",
+                (
+                    "jefe_trabajos",
+                    "jefe_trabajadores",
+                    "jefe_clientes",
+                    "jefe_turnos",
+                ),
+            ),
             (
                 usuario_secretario,
                 "Panel del secretario",
                 "vista_secretario",
+                (
+                    "secretario_clientes",
+                    "secretario_presupuestos",
+                    "secretario_turnos",
+                ),
             ),
-            (usuario_mecanico, "Panel del mecánico", "panel_mecanico"),
+            (
+                usuario_mecanico,
+                "Panel del mecánico",
+                "panel_mecanico",
+                (),
+            ),
         )
-        for usuario, etiqueta, vista in accesos:
+        for usuario, etiqueta, vista, accesos_rapidos in accesos:
             with self.subTest(rol=etiqueta):
                 response = self.client.post(
                     reverse("login"),
@@ -1018,8 +1153,14 @@ class AvanceTurnoTests(TestCase):
                 )
                 self.assertRedirects(response, reverse("inicio"))
                 inicio = self.client.get(reverse("inicio"))
-                self.assertContains(inicio, etiqueta)
-                self.assertContains(inicio, reverse(vista))
+                self.assertContains(inicio, "Accesos de personal")
+                self.assertContains(inicio, reverse("accesos_personal"))
+                self.assertNotContains(inicio, reverse(vista))
+                paneles = self.client.get(reverse("accesos_personal"))
+                self.assertContains(paneles, etiqueta)
+                self.assertContains(paneles, reverse(vista))
+                for acceso in accesos_rapidos:
+                    self.assertContains(paneles, reverse(acceso))
                 self.client.logout()
 
     def test_usuario_con_rol_administrador_accede_al_admin_django_al_iniciar_sesion(
@@ -1067,10 +1208,28 @@ class AvanceTurnoTests(TestCase):
                     self.client.get(reverse(vista)).status_code,
                     200,
                 )
-        self.assertContains(
-            self.client.get(reverse("inicio")),
-            "Administración Django",
+        inicio = self.client.get(reverse("inicio"))
+        self.assertContains(inicio, "Accesos de personal")
+        self.assertNotContains(inicio, "Administración Django")
+        paneles = self.client.get(reverse("accesos_personal"))
+        self.assertContains(paneles, "Desarrollador")
+        self.assertContains(paneles, reverse("admin:index"))
+        self.assertContains(paneles, reverse("jefe_admin_inicio"))
+
+    def test_usuario_staff_ve_solo_sus_accesos_habilitados(self):
+        usuario = get_user_model().objects.create_user(
+            username="staff_accesos",
+            is_staff=True,
         )
+        self.client.force_login(usuario)
+
+        respuesta = self.client.get(reverse("accesos_personal"))
+
+        self.assertContains(respuesta, "Panel del desarrollador")
+        self.assertContains(respuesta, reverse("admin:index"))
+        self.assertContains(respuesta, "Panel del jefe de taller")
+        self.assertContains(respuesta, "Panel del secretario")
+        self.assertContains(respuesta, "Panel del mecánico")
 
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
@@ -1098,6 +1257,59 @@ class AvanceTurnoTests(TestCase):
         turno.refresh_from_db()
         self.assertRedirects(response, reverse("panel_mecanico"))
         self.assertEqual(turno.porcentaje_reparacion, 75)
+
+    def test_jefe_y_secretario_pueden_ver_y_actualizar_turnos_de_todos(self):
+        mecanico_uno = get_user_model().objects.create_user(
+            username="mecanico_asignado_uno",
+        )
+        mecanico_dos = get_user_model().objects.create_user(
+            username="mecanico_asignado_dos",
+        )
+        turno_uno = self.crear_turno_asignado(mecanico_uno, "JK777JK")
+        turno_dos = self.crear_turno_asignado(mecanico_dos, "LM888LM")
+
+        for indice, nombre_grupo in enumerate(
+            ("Jefe de taller", "Secretario"),
+            start=1,
+        ):
+            with self.subTest(rol=nombre_grupo):
+                usuario = get_user_model().objects.create_user(
+                    username=f"responsable_taller_{indice}",
+                )
+                usuario.groups.add(Group.objects.create(name=nombre_grupo))
+                self.client.force_login(usuario)
+
+                panel = self.client.get(reverse("panel_mecanico"))
+                self.assertEqual(panel.status_code, 200)
+                self.assertContains(panel, "JK777JK")
+                self.assertContains(panel, "LM888LM")
+                self.assertContains(
+                    panel,
+                    "Podés ver y actualizar todos los turnos del taller.",
+                )
+                accesos = self.client.get(reverse("accesos_personal"))
+                self.assertContains(accesos, reverse("panel_mecanico"))
+
+                turno_dos.estado = "pendiente"
+                turno_dos.save(update_fields=["estado"])
+                respuesta = self.client.post(
+                    reverse(
+                        "mecanico_actualizar_avance",
+                        args=[turno_dos.pk],
+                    ),
+                    {
+                        "porcentaje_reparacion": "15",
+                        "estado": "reparacion",
+                    },
+                )
+
+                turno_dos.refresh_from_db()
+                self.assertRedirects(respuesta, reverse("panel_mecanico"))
+                self.assertEqual(turno_dos.estado, "reparacion")
+                self.client.logout()
+
+        turno_uno.refresh_from_db()
+        self.assertEqual(turno_uno.estado, "pendiente")
 
     def test_usuario_sin_trabajador_asociado_recibe_indicacion(self):
         usuario = get_user_model().objects.create_user(
@@ -1183,6 +1395,59 @@ class AvanceTurnoTests(TestCase):
         )
         self.assertContains(estado_cliente, "40%")
 
+    def test_mecanico_actualiza_estado_de_reparacion(self):
+        usuario_mecanico = get_user_model().objects.create_user(
+            username="mecanico_estado",
+        )
+        turno = self.crear_turno_asignado(usuario_mecanico, "EF555EF")
+        self.client.force_login(usuario_mecanico)
+
+        respuesta = self.client.post(
+            reverse("mecanico_actualizar_avance", args=[turno.pk]),
+            {
+                "porcentaje_reparacion": "15",
+                "estado": "reparacion",
+            },
+        )
+
+        turno.refresh_from_db()
+        self.assertRedirects(respuesta, reverse("panel_mecanico"))
+        self.assertEqual(turno.estado, "reparacion")
+        self.assertEqual(turno.porcentaje_reparacion, 15)
+        self.assertEqual(turno.observaciones, "Revisar frenos")
+        panel = self.client.get(reverse("panel_mecanico"))
+        self.assertContains(panel, "En reparación")
+        self.assertContains(panel, 'name="estado"')
+        self.assertContains(panel, "Esperando repuesto")
+        self.assertNotContains(panel, "Cancelado")
+        estado_cliente = self.client.post(
+            reverse("estado_reparacion"),
+            {"patente": turno.patente},
+        )
+        self.assertContains(estado_cliente, "En reparación")
+
+    def test_mecanico_no_puede_asignar_estados_fuera_del_proceso_de_reparacion(
+        self,
+    ):
+        usuario_mecanico = get_user_model().objects.create_user(
+            username="mecanico_estado_invalido",
+        )
+        turno = self.crear_turno_asignado(usuario_mecanico, "GH666GH")
+        self.client.force_login(usuario_mecanico)
+
+        respuesta = self.client.post(
+            reverse("mecanico_actualizar_avance", args=[turno.pk]),
+            {
+                "porcentaje_reparacion": "15",
+                "estado": "cancelado",
+            },
+        )
+
+        turno.refresh_from_db()
+        self.assertRedirects(respuesta, reverse("panel_mecanico"))
+        self.assertEqual(turno.estado, "pendiente")
+        self.assertEqual(turno.porcentaje_reparacion, 15)
+
     def test_mecanico_no_puede_modificar_turno_no_asignado(self):
         usuario_mecanico = get_user_model().objects.create_user(
             username="mecanico_no_asignado",
@@ -1200,12 +1465,16 @@ class AvanceTurnoTests(TestCase):
 
         response = self.client.post(
             reverse("mecanico_actualizar_avance", args=[turno.pk]),
-            {"porcentaje_reparacion": "90"},
+            {
+                "porcentaje_reparacion": "90",
+                "estado": "reparacion",
+            },
         )
 
         turno.refresh_from_db()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(turno.porcentaje_reparacion, 15)
+        self.assertEqual(turno.estado, "pendiente")
 
 
     @override_settings(

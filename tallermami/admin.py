@@ -337,18 +337,22 @@ class TurnoAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         porcentaje_anterior = None
+        fecha_anterior = None
         if change:
-            porcentaje_anterior = (
-                Turno.objects.filter(pk=obj.pk)
-                .values_list("porcentaje_reparacion", flat=True)
-                .first()
-            )
+            turno_anterior = Turno.objects.filter(pk=obj.pk).values(
+                "porcentaje_reparacion",
+                "fecha_turno",
+            ).first()
+            if turno_anterior:
+                porcentaje_anterior = turno_anterior["porcentaje_reparacion"]
+                fecha_anterior = turno_anterior["fecha_turno"]
         with transaction.atomic():
             super().save_model(request, obj, form, change)
-            guardar_turno_con_disponibilidad(
-                obj,
-                obj.fecha_turno,
-            )
+            if not change or obj.fecha_turno != fecha_anterior:
+                guardar_turno_con_disponibilidad(
+                    obj,
+                    obj.fecha_turno,
+                )
 
         if (
             porcentaje_anterior is not None

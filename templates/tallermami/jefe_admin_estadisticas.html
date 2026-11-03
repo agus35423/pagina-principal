@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Estadísticas | Administración{% endblock %}
+
+{% block content %}
+<main class="container py-4 jefe-admin-page">
+    <a href="{% url url_volver %}" class="btn btn-outline-secondary btn-sm mb-3 jefe-admin-back">
+        ← Volver al panel
+    </a>
+    <div class="jefe-admin-hero mb-4">
+        <span class="jefe-admin-eyebrow">RENDIMIENTO DEL TALLER</span>
+        <h1>Estadísticas</h1>
+        <p>Consultá los turnos solicitados por cliente y los vehículos entregados por trabajador.</p>
+    </div>
+
+    <div class="jefe-admin-statistics">
+        <section class="card shadow-sm jefe-admin-stats-card jefe-admin-stats-clients mb-4"
+                 aria-labelledby="clientes-recurrentes-titulo">
+            <div class="card-body">
+                <div class="jefe-admin-stats-heading">
+                    <span class="jefe-admin-stats-icon" aria-hidden="true">
+                        <i class="fa-solid fa-users"></i>
+                    </span>
+                    <div>
+                        <span class="jefe-admin-stats-kicker">ATENCIÓN Y FIDELIDAD</span>
+                        <h2 id="clientes-recurrentes-titulo">Estadísticas de clientes</h2>
+                        <p>Clientes ordenados por cantidad de turnos solicitados.</p>
+                    </div>
+                </div>
+                <div class="jefe-admin-stats-list">
+                    {% for cliente in clientes_recurrentes %}
+                        <div class="jefe-admin-stat-row">
+                            <span class="jefe-admin-stat-person">
+                                <span class="jefe-admin-stat-rank">{{ forloop.counter }}</span>
+                                <span>{{ cliente.nombre }} {{ cliente.apellido }}</span>
+                            </span>
+                            <strong class="jefe-admin-stat-value">
+                                {{ cliente.cantidad_turnos }}
+                                <span>{% if cliente.cantidad_turnos == 1 %}turno{% else %}turnos{% endif %}</span>
+                            </strong>
+                        </div>
+                    {% empty %}
+                        <p class="jefe-admin-stats-empty">Todavía no hay turnos solicitados.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section class="card shadow-sm jefe-admin-stats-card jefe-admin-stats-workers"
+                 aria-labelledby="trabajadores-destacados-titulo">
+            <div class="card-body">
+                <div class="jefe-admin-stats-heading">
+                    <span class="jefe-admin-stats-icon" aria-hidden="true">
+                        <i class="fa-solid fa-screwdriver-wrench"></i>
+                    </span>
+                    <div>
+                        <span class="jefe-admin-stats-kicker">RENDIMIENTO DEL EQUIPO</span>
+                        <h2 id="trabajadores-destacados-titulo">Estadísticas de trabajadores</h2>
+                        <p>Trabajos entregados a clientes por cada trabajador.</p>
+                    </div>
+                </div>
+                <div class="jefe-admin-stats-list">
+                    {% for trabajador in trabajadores_destacados %}
+                        <div class="jefe-admin-stat-row">
+                            <span class="jefe-admin-stat-person">
+                                <span class="jefe-admin-stat-rank">{{ forloop.counter }}</span>
+                                <span>{{ trabajador.nombre }} {{ trabajador.apellido }}</span>
+                            </span>
+                            <strong class="jefe-admin-stat-value">
+                                {{ trabajador.cantidad_trabajos }}
+                                <span>{% if trabajador.cantidad_trabajos == 1 %}trabajo{% else %}trabajos{% endif %}</span>
+                            </strong>
+                        </div>
+                    {% empty %}
+                        <p class="jefe-admin-stats-empty">Todavía no hay vehículos entregados.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+{% endblock %}

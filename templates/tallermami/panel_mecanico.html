@@ -8,11 +8,15 @@
         <span class="text-uppercase text-secondary small">Taller Molina Henze · Reparaciones</span>
         <h1 class="mt-2">Panel del mecánico</h1>
         <p class="text-secondary">
-            {% if es_admin %}
-                Acceso de administrador: podés ver y actualizar el avance de todos los turnos.
+            {% if puede_gestionar_todos %}
+                {% if es_admin %}
+                    Acceso de administrador: podés ver y actualizar todos los turnos.
+                {% else %}
+                    Podés ver y actualizar todos los turnos del taller.
+                {% endif %}
             {% else %}
                 Hola {{ mecanico.nombre }}. Desde aquí solo podés actualizar el avance
-                de los trabajos que tenés asignados.
+                y estado de los vehículos asignados a vos.
             {% endif %}
         </p>
     </section>
@@ -32,8 +36,10 @@
                                     </p>
                                     <p class="text-secondary mb-0">
                                         Fecha: {{ turno.fecha_turno|date:"d/m/Y H:i" }}
-                                        · Estado: {{ turno.get_estado_display }}
                                     </p>
+                                    <span class="badge rounded-pill bg-light text-dark border mt-2">
+                                        {{ turno.get_estado_display }}
+                                    </span>
                                 </div>
                                 <div class="text-md-end">
                                     <span class="text-secondary">Avance actual</span>
@@ -47,9 +53,9 @@
 
                             <form method="post"
                                   action="{% url 'mecanico_actualizar_avance' turno.id %}"
-                                  class="row g-2 align-items-end">
+                                  class="row g-3 align-items-end">
                                 {% csrf_token %}
-                                <div class="col-sm-4 col-md-3">
+                                <div class="col-sm-6 col-md-3">
                                     <label for="avance-{{ turno.id }}" class="form-label">
                                         Nuevo avance (%)
                                     </label>
@@ -63,10 +69,22 @@
                                            value="{{ turno.porcentaje_reparacion }}"
                                            required>
                                 </div>
+                                <div class="col-sm-6 col-md-4">
+                                    <label for="estado-{{ turno.id }}" class="form-label">
+                                        Cambiar estado
+                                    </label>
+                                    <select id="estado-{{ turno.id }}"
+                                            name="estado"
+                                            class="form-select">
+                                        {% for valor, etiqueta in estados_mecanico %}
+                                            <option value="{{ valor }}">{{ etiqueta }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                                 <div class="col-sm-auto">
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fa-solid fa-floppy-disk me-2"></i>
-                                        Guardar avance
+                                        Guardar cambios
                                     </button>
                                 </div>
                             </form>
