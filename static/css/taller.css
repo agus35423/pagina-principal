@@ -710,6 +710,7 @@ img {
 
     margin-top: 40px;
 
+
 }
 
 
@@ -721,6 +722,7 @@ img {
 
     font-weight: 600;
 
+
 }
 
 
@@ -729,6 +731,7 @@ img {
     color: #5fa4ff;
 
     margin-right: 5px;
+
 
 }
 
@@ -763,7 +766,7 @@ img {
 
     gap: 10px;
 
-    transform: translateY(-35px);
+    transform: translateY(0);
 
     position: relative;
 
@@ -778,7 +781,9 @@ img {
 
     align-items: center;
 
-    gap: 12px;
+    gap: 14px;
+
+    min-width: 0;
 
     padding: 12px;
 
@@ -796,11 +801,11 @@ img {
 
 .stat-item > .stat-icon-image {
 
-    width: 80px;
+    width: 88px;
 
-    height: 80px;
+    height: 88px;
 
-    flex: 0 0 80px;
+    flex: 0 0 88px;
 
     object-fit: contain;
 
@@ -810,18 +815,17 @@ img {
 
 }
 
+.stat-item > div {
+
+    flex: 1 1 0;
+
+    min-width: 0;
+
+}
 
 .stat-item:nth-child(-n + 2) > .stat-icon-image {
 
-    width: 100px;
-
-    height: 100px;
-
-    flex-basis: 100px;
-
     object-fit: cover;
-
-    transform: scale(1.06);
 
 }
 
@@ -3065,6 +3069,202 @@ img {
     padding: 28px;
 }
 
+.jefe-presupuesto-form-card {
+    border-color: #dbe5ef;
+    border-radius: 20px;
+    box-shadow: 0 18px 48px rgba(7, 24, 39, 0.1) !important;
+}
+
+.jefe-presupuesto-form-card .jefe-admin-card-header {
+    padding: 30px 34px;
+    background:
+        radial-gradient(circle at 88% 18%, rgba(96, 165, 250, 0.3), transparent 28%),
+        linear-gradient(120deg, #071827, #123c64);
+}
+
+.jefe-budget-eyebrow {
+    display: block;
+    margin-bottom: 9px;
+    color: #bfdbfe;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+}
+
+.jefe-presupuesto-form-card .jefe-admin-card-header p {
+    max-width: 680px;
+    color: rgba(255, 255, 255, 0.76) !important;
+}
+
+.jefe-presupuesto-form-card > .card-body {
+    padding: 32px 34px;
+}
+
+.jefe-budget-intro {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding: 18px 20px;
+    border: 1px solid #dbeafe;
+    border-radius: 15px;
+    background: linear-gradient(110deg, #f4f8ff, #fff);
+}
+
+.jefe-budget-intro-icon {
+    display: inline-flex;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    color: #1d4ed8;
+    background: #dbeafe;
+    font-size: 1.15rem;
+}
+
+.jefe-budget-intro p,
+.jefe-budget-section-heading p {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.jefe-budget-section {
+    margin-top: 24px;
+    padding: 23px;
+    border: 1px solid #e6ebf1;
+    border-radius: 16px;
+    background: #fff;
+}
+
+.jefe-budget-section-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    margin-bottom: 20px;
+}
+
+.jefe-budget-section-number {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    color: #1d4ed8;
+    background: #eff6ff;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.jefe-budget-section-heading h2 {
+    margin: 0 0 4px;
+    color: #10243a;
+    font-size: 1.05rem;
+    font-weight: 750;
+}
+
+.jefe-budget-section-heading p {
+    margin: 0;
+}
+
+.jefe-budget-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 20px;
+}
+
+.jefe-budget-field-wide {
+    grid-column: 1 / -1;
+}
+
+.jefe-budget-field .form-control,
+.jefe-budget-field .form-select,
+.jefe-used-part-field .form-control {
+    min-height: 46px;
+    border-color: #d8e1eb;
+    border-radius: 10px;
+}
+
+.jefe-budget-field textarea.form-control {
+    min-height: 108px;
+}
+
+.jefe-budget-field .form-control:focus,
+.jefe-budget-field .form-select:focus,
+.jefe-used-part-field .form-control:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.13);
+}
+
+.jefe-budget-field-checkbox {
+    grid-column: 1 / -1;
+    padding-top: 4px;
+}
+
+.jefe-used-parts-section {
+    border-color: #cfe0f4;
+    background: #fbfdff;
+}
+
+.jefe-used-parts-section .jefe-budget-section-number {
+    color: #047857;
+    background: #d1fae5;
+}
+
+.jefe-used-parts-list {
+    display: grid;
+    gap: 12px;
+}
+
+.jefe-used-part-row {
+    padding: 17px;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    background: #fff;
+}
+
+.jefe-used-part-fields {
+    display: grid;
+    grid-template-columns: minmax(220px, 2fr) minmax(90px, 0.7fr) minmax(140px, 1fr) auto;
+    align-items: end;
+    gap: 14px;
+}
+
+.jefe-used-part-field .form-label {
+    margin-bottom: 7px;
+    color: #334155;
+    font-size: 0.83rem;
+}
+
+.jefe-used-part-delete {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 4px 12px;
+    color: #b91c1c;
+    font-size: 0.82rem;
+}
+
+.jefe-used-part-delete input {
+    accent-color: #dc2626;
+}
+
+.jefe-add-used-part {
+    margin-top: 14px;
+    border-radius: 10px;
+    font-weight: 650;
+}
+
+.jefe-budget-save {
+    min-width: 150px;
+    padding: 11px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
 .jefe-status-field {
     padding: 18px;
     border: 1px solid #bfdbfe;
@@ -3103,6 +3303,31 @@ img {
     padding: 8px 11px;
     font-size: 11px;
     font-weight: 700;
+}
+
+@media (max-width: 767.98px) {
+    .jefe-presupuesto-form-card .jefe-admin-card-header,
+    .jefe-presupuesto-form-card > .card-body {
+        padding: 22px 18px;
+    }
+
+    .jefe-budget-section {
+        padding: 18px 15px;
+    }
+
+    .jefe-budget-fields,
+    .jefe-used-part-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .jefe-budget-field-wide,
+    .jefe-budget-field-checkbox {
+        grid-column: auto;
+    }
+
+    .jefe-used-part-delete {
+        padding-bottom: 0;
+    }
 }
 
 /* =========================================================
@@ -4365,13 +4590,14 @@ img {
     .hero-features {
 
         display: block;
-
+ 
     }
 
 
     .hero-features div {
 
         margin-bottom: 8px;
+
 
     }
 
@@ -4414,16 +4640,13 @@ img {
 
     .stat-item:nth-child(-n + 2) > .stat-icon-image {
 
-        flex-basis: 68px;
+        flex-basis: 60px;
 
-        width: 68px;
+        width: 60px;
 
-        height: 68px;
-
-        transform: scale(1.04);
+        height: 60px;
 
     }
-
 
     .services-section,
     .about-section,
@@ -4783,7 +5006,7 @@ img {
 
         grid-template-columns: repeat(2, minmax(0, 1fr));
 
-        transform: translateY(-22px);
+        transform: translateY(0);
 
     }
 
@@ -4813,13 +5036,11 @@ img {
 
     .stat-item:nth-child(-n + 2) > .stat-icon-image {
 
-        flex-basis: 52px;
+        flex-basis: 44px;
 
-        width: 52px;
+        width: 44px;
 
-        height: 52px;
-
-        transform: scale(1.03);
+        height: 44px;
 
     }
 

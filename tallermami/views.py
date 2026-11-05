@@ -1520,6 +1520,13 @@ def jefe_admin_formulario(request, app_label, model_name, object_id=None):
         request.FILES or None,
         instance=objeto,
     )
+    repuestos_utilizados_formset = None
+    if model is Presupuesto:
+        repuestos_utilizados_formset = RepuestosUtilizadosFormSet(
+            request.POST or None,
+            instance=objeto,
+            prefix="repuestos_utilizados",
+        )
     if model is Turno and "estado" in form.fields:
         campo_estado = form.fields["estado"]
         campo_estado.choices = Turno.ESTADOS
@@ -1530,12 +1537,20 @@ def jefe_admin_formulario(request, app_label, model_name, object_id=None):
             }
         )
         campo_estado.widget.choices = campo_estado.choices
-    if request.method == "POST" and form.is_valid():
+    formset_valido = (
+        repuestos_utilizados_formset.is_valid()
+        if request.method == "POST" and repuestos_utilizados_formset
+        else True
+    )
+    if request.method == "POST" and form.is_valid() and formset_valido:
         try:
             with transaction.atomic():
                 objeto = form.save(commit=False)
                 model_admin.save_model(request, objeto, form, cambio)
                 form.save_m2m()
+                if repuestos_utilizados_formset:
+                    repuestos_utilizados_formset.instance = objeto
+                    repuestos_utilizados_formset.save()
         except ValidationError as error:
             form.add_error(None, error.messages[0])
         else:
@@ -1581,6 +1596,37 @@ def jefe_admin_formulario(request, app_label, model_name, object_id=None):
                 }
             )
 
+    form_sections = []
+    if model is Presupuesto:
+        for titulo, descripcion, nombres_campos in (
+            (
+                "Datos del turno",
+                "Elegí el turno y revisá el estado de la propuesta.",
+                ("turno", "estado"),
+            ),
+            (
+                "Presupuesto estimado",
+                "Indicá la mano de obra y los detalles para el cliente.",
+                ("mano_obra_estimada", "observaciones"),
+            ),
+            (
+                "Cierre del trabajo",
+                "Completá los valores finales cuando se termine la reparación.",
+                ("mano_obra_final", "detalle_final", "final_enviado"),
+            ),
+        ):
+            form_sections.append(
+                {
+                    "titulo": titulo,
+                    "descripcion": descripcion,
+                    "campos": [
+                        form[nombre]
+                        for nombre in nombres_campos
+                        if nombre in form.fields
+                    ],
+                }
+            )
+
     return render(
         request,
         "tallermami/jefe_admin_formulario.html",
@@ -1591,6 +1637,8 @@ def jefe_admin_formulario(request, app_label, model_name, object_id=None):
             "objeto": objeto,
             "cambio": cambio,
             "campos_solo_lectura": campos_solo_lectura,
+            "form_sections": form_sections,
+            "repuestos_utilizados_formset": repuestos_utilizados_formset,
         },
     )
 
@@ -1774,11 +1822,20 @@ def secretario_presupuesto_nuevo(request):
 
     form = PresupuestoForm(request.POST or None)
     formset = RepuestosPresupuestadosFormSet(
-        request.POST or None
+        request.POST or None,
+        prefix="repuestos_estimados",
+    )
+    repuestos_utilizados_formset = RepuestosUtilizadosFormSet(
+        request.POST or None,
+        prefix="repuestos_utilizados",
     )
 
     if request.method == "POST":
-        if form.is_valid() and formset.is_valid():
+        if (
+            form.is_valid()
+            and formset.is_valid()
+            and repuestos_utilizados_formset.is_valid()
+        ):
             presupuesto = form.save(commit=False)
 
             try:
@@ -1787,6 +1844,8 @@ def secretario_presupuesto_nuevo(request):
 
                     formset.instance = presupuesto
                     formset.save()
+                    repuestos_utilizados_formset.instance = presupuesto
+                    repuestos_utilizados_formset.save()
 
             except Exception:
                 messages.error(
@@ -1907,6 +1966,23 @@ def secretario_presupuesto_nuevo(request):
         {
             "form": form,
             "formset": formset,
+            "repuestos_utilizados_formset": repuestos_utilizados_formset,
+            "formsets": (
+                (
+                    formset,
+                    "estimated-parts",
+                    "Repuestos presupuestados",
+                    "Cargá el nombre, la cantidad y el precio unitario de cada repuesto.",
+                    "Agregar repuesto presupuestado",
+                ),
+                (
+                    repuestos_utilizados_formset,
+                    "used-parts",
+                    "Repuestos utilizados",
+                    "Registrá los repuestos instalados con su cantidad y precio unitario.",
+                    "Agregar repuesto utilizado",
+                ),
+            ),
             "titulo": "Crear presupuesto",
             "panel": "secretario",
         },

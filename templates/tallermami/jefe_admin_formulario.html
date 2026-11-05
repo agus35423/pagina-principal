@@ -12,9 +12,12 @@
         ← Volver a {{ modelo_info.verbose_name_plural }}
     </a>
 
-    <div class="card shadow-sm mx-auto jefe-admin-form-card" style="max-width: 900px;">
+    <div class="card shadow-sm mx-auto jefe-admin-form-card{% if form_sections %} jefe-presupuesto-form-card{% endif %}" style="max-width: {% if form_sections %}1080px{% else %}900px{% endif %};">
         <div class="card-header jefe-admin-card-header">
-            <h1 class="h4 mb-0">
+            {% if form_sections %}
+                <span class="jefe-budget-eyebrow">GESTIÓN DEL TALLER</span>
+            {% endif %}
+            <h1 class="{% if form_sections %}h2{% else %}h4{% endif %} mb-0">
                 {% if cambio_contrasena %}
                     Cambiar contraseña
                 {% elif cambio %}
@@ -23,6 +26,9 @@
                     Crear {{ modelo_info.verbose_name }}
                 {% endif %}
             </h1>
+            {% if form_sections %}
+                <p class="mb-0 mt-2">Organizá los costos estimados y registrá los repuestos usados al finalizar el trabajo.</p>
+            {% endif %}
             {% if objeto %}
                 <p class="text-muted mb-0 mt-1">{{ objeto }}</p>
             {% endif %}
@@ -42,50 +48,129 @@
                     <div class="alert alert-danger">{{ form.non_field_errors }}</div>
                 {% endif %}
                 {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
-                {% for field in form.visible_fields %}
-                    <div class="mb-3 {% if field.name == 'estado' and modelo_info.model_name == 'turno' %}jefe-status-field{% endif %}">
-                        {% if field.name == "estado" and modelo_info.model_name == "turno" %}
-                            <div class="jefe-status-field-heading">
-                                <span class="jefe-status-icon">
-                                    <i class="fa-solid fa-arrows-rotate"></i>
-                                </span>
+                {% if form_sections %}
+                    <div class="jefe-budget-intro">
+                        <span class="jefe-budget-intro-icon"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+                        <div>
+                            <h2 class="h5 mb-1">{% if cambio %}Actualizá el presupuesto{% else %}Prepará un nuevo presupuesto{% endif %}</h2>
+                            <p class="mb-0">Los datos de cierre pueden completarse después de realizar el trabajo.</p>
+                        </div>
+                    </div>
+                    {% for section in form_sections %}
+                        <section class="jefe-budget-section">
+                            <div class="jefe-budget-section-heading">
+                                <span class="jefe-budget-section-number">0{{ forloop.counter }}</span>
                                 <div>
-                                    <label class="form-label fw-semibold mb-1"
-                                           for="{{ field.id_for_label }}">
-                                        Estado del turno
-                                    </label>
-                                    <p class="text-muted small mb-0">
-                                        Seleccioná la etapa actual del vehículo.
-                                    </p>
+                                    <h2>{{ section.titulo }}</h2>
+                                    <p>{{ section.descripcion }}</p>
                                 </div>
                             </div>
-                            {{ field }}
-                            {% for error in field.errors %}
-                                <div class="text-danger small mt-1">{{ error }}</div>
-                            {% endfor %}
-                        {% else %}
-                        {% if field.field.widget.input_type == "checkbox" %}
-                            <div class="form-check">
-                                {{ field }}
-                                <label class="form-check-label" for="{{ field.id_for_label }}">
-                                    {{ field.label }}
-                                </label>
+                            <div class="jefe-budget-fields">
+                                {% for field in section.campos %}
+                                    <div class="jefe-budget-field{% if field.name == 'observaciones' or field.name == 'detalle_final' %} jefe-budget-field-wide{% endif %}{% if field.name == 'final_enviado' %} jefe-budget-field-checkbox{% endif %}">
+                                        {% if field.field.widget.input_type == "checkbox" %}
+                                            <div class="form-check">
+                                                {{ field }}
+                                                <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                            </div>
+                                        {% else %}
+                                            <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                            {{ field }}
+                                        {% endif %}
+                                        {% if field.help_text %}<div class="form-text">{{ field.help_text|safe }}</div>{% endif %}
+                                        {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                                    </div>
+                                {% endfor %}
                             </div>
-                        {% else %}
-                            <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
-                                {{ field.label }}
-                            </label>
-                            {{ field }}
-                        {% endif %}
-                        {% if field.help_text %}
-                            <div class="form-text">{{ field.help_text|safe }}</div>
-                        {% endif %}
-                        {% for error in field.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                        {% endfor %}
-                        {% endif %}
-                    </div>
-                {% endfor %}
+                        </section>
+                    {% endfor %}
+
+                    {% if repuestos_utilizados_formset %}
+                        <section class="jefe-budget-section jefe-used-parts-section">
+                            <div class="jefe-budget-section-heading">
+                                <span class="jefe-budget-section-number"><i class="fa-solid fa-wrench"></i></span>
+                                <div>
+                                    <h2>Repuestos utilizados</h2>
+                                    <p>Registrá cada repuesto instalado, con su cantidad y precio unitario.</p>
+                                </div>
+                            </div>
+                            {{ repuestos_utilizados_formset.management_form }}
+                            {% if repuestos_utilizados_formset.non_form_errors %}
+                                <div class="alert alert-danger">{{ repuestos_utilizados_formset.non_form_errors }}</div>
+                            {% endif %}
+                            <div class="jefe-used-parts-list" id="used-parts-list">
+                                {% for part_form in repuestos_utilizados_formset %}
+                                    <article class="jefe-used-part-row">
+                                        {% for hidden in part_form.hidden_fields %}{{ hidden }}{% endfor %}
+                                        <div class="jefe-used-part-fields">
+                                            {% for field in part_form.visible_fields %}
+                                                {% if field.name != "DELETE" %}
+                                                    <div class="jefe-used-part-field{% if field.name == 'nombre' %} jefe-used-part-name{% endif %}">
+                                                        <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                        {{ field }}
+                                                        {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                                                    </div>
+                                                {% else %}
+                                                    <div class="jefe-used-part-delete">{{ field }}<label for="{{ field.id_for_label }}">Quitar</label></div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </article>
+                                {% endfor %}
+                            </div>
+                            <template id="empty-used-part-form">
+                                <article class="jefe-used-part-row">
+                                    {% for hidden in repuestos_utilizados_formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    <div class="jefe-used-part-fields">
+                                        {% for field in repuestos_utilizados_formset.empty_form.visible_fields %}
+                                            {% if field.name != "DELETE" %}
+                                                <div class="jefe-used-part-field{% if field.name == 'nombre' %} jefe-used-part-name{% endif %}">
+                                                    <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                    {{ field }}
+                                                </div>
+                                            {% else %}
+                                                <div class="jefe-used-part-delete">{{ field }}<label for="{{ field.id_for_label }}">Quitar</label></div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </article>
+                            </template>
+                            <button class="btn btn-outline-primary jefe-add-used-part" type="button" id="add-used-part">
+                                <i class="fa-solid fa-plus me-2"></i>Agregar otro repuesto
+                            </button>
+                        </section>
+                    {% endif %}
+                {% else %}
+                    {% for field in form.visible_fields %}
+                        <div class="mb-3 {% if field.name == 'estado' and modelo_info.model_name == 'turno' %}jefe-status-field{% endif %}">
+                            {% if field.name == "estado" and modelo_info.model_name == "turno" %}
+                                <div class="jefe-status-field-heading">
+                                    <span class="jefe-status-icon">
+                                        <i class="fa-solid fa-arrows-rotate"></i>
+                                    </span>
+                                    <div>
+                                        <label class="form-label fw-semibold mb-1" for="{{ field.id_for_label }}">Estado del turno</label>
+                                        <p class="text-muted small mb-0">Seleccioná la etapa actual del vehículo.</p>
+                                    </div>
+                                </div>
+                                {{ field }}
+                                {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {% else %}
+                                {% if field.field.widget.input_type == "checkbox" %}
+                                    <div class="form-check">
+                                        {{ field }}
+                                        <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    </div>
+                                {% else %}
+                                    <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {{ field }}
+                                {% endif %}
+                                {% if field.help_text %}<div class="form-text">{{ field.help_text|safe }}</div>{% endif %}
+                                {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% endif %}
 
                 {% if campos_solo_lectura %}
                     <hr>
@@ -99,7 +184,9 @@
                 {% endif %}
 
                 <div class="d-flex gap-2 mt-4">
-                    <button class="btn btn-primary" type="submit">Guardar</button>
+                    <button class="btn btn-primary{% if form_sections %} jefe-budget-save{% endif %}" type="submit">
+                        {% if form_sections %}<i class="fa-solid fa-floppy-disk me-2"></i>{% endif %}Guardar
+                    </button>
                     <a class="btn btn-outline-secondary"
                        href="{% url 'jefe_admin_lista' app_label=modelo_info.app_label model_name=modelo_info.model_name %}">
                         Cancelar
@@ -109,4 +196,35 @@
         </div>
     </div>
 </main>
+{% if form_sections %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const list = document.getElementById("used-parts-list");
+        const addButton = document.getElementById("add-used-part");
+        const totalForms = document.getElementById("id_repuestos_utilizados-TOTAL_FORMS");
+        const emptyForm = document.getElementById("empty-used-part-form");
+
+        if (!list || !addButton || !totalForms || !emptyForm) {
+            return;
+        }
+
+        addButton.addEventListener("click", function () {
+            const index = Number(totalForms.value);
+            const row = emptyForm.content.cloneNode(true);
+            row.querySelectorAll("[name], [id], label[for]").forEach(function (element) {
+                ["name", "id", "for"].forEach(function (attribute) {
+                    if (element.hasAttribute(attribute)) {
+                        element.setAttribute(
+                            attribute,
+                            element.getAttribute(attribute).replace(/__prefix__/g, index)
+                        );
+                    }
+                });
+            });
+            list.appendChild(row);
+            totalForms.value = index + 1;
+        });
+    });
+</script>
+{% endif %}
 {% endblock %}

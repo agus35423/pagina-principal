@@ -32,7 +32,6 @@ from .models import (
     OrdenTrabajo,
     PerfilUsuario,
     Presupuesto,
-    Repuesto,
     RepuestoPresupuestado,
     RepuestoUtilizado,
     Trabajo,
@@ -516,13 +515,6 @@ class OrdenTrabajoAdmin(admin.ModelAdmin):
     ordering = ("-fecha_ingreso", "-id")
 
 
-@admin.register(Repuesto)
-class RepuestoAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "stock", "precio")
-    search_fields = ("nombre", "descripcion")
-    ordering = ("nombre",)
-
-
 @admin.register(TrabajoRealizado)
 class TrabajoRealizadoAdmin(admin.ModelAdmin):
     list_display = ("id", "orden_trabajo", "descripcion", "fecha", "mecanico")
@@ -826,28 +818,3 @@ class PresupuestoAdmin(admin.ModelAdmin):
                     level=messages.ERROR,
                 )
 
-
-# ==========================================================
-# REPUESTOS: ADMINISTRACIÓN INDEPENDIENTE
-# ==========================================================
-
-@admin.register(RepuestoPresupuestado)
-class RepuestoPresupuestadoAdmin(admin.ModelAdmin):
-    list_display = (
-        "nombre",
-        "presupuesto",
-        "cantidad",
-        "precio_unitario",
-    )
-    search_fields = ("nombre",)
-
-
-@admin.register(RepuestoUtilizado)
-class RepuestoUtilizadoAdmin(admin.ModelAdmin):
-    list_display = (
-        "nombre",
-        "presupuesto",
-        "cantidad",
-        "precio_unitario",
-    )
-    search_fields = ("nombre",)

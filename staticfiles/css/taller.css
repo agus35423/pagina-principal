@@ -710,6 +710,7 @@ img {
 
     margin-top: 40px;
 
+
 }
 
 
@@ -721,6 +722,7 @@ img {
 
     font-weight: 600;
 
+
 }
 
 
@@ -729,6 +731,7 @@ img {
     color: #5fa4ff;
 
     margin-right: 5px;
+
 
 }
 
@@ -763,7 +766,7 @@ img {
 
     gap: 10px;
 
-    transform: translateY(-35px);
+    transform: translateY(0);
 
     position: relative;
 
@@ -778,7 +781,9 @@ img {
 
     align-items: center;
 
-    gap: 12px;
+    gap: 14px;
+
+    min-width: 0;
 
     padding: 12px;
 
@@ -796,11 +801,11 @@ img {
 
 .stat-item > .stat-icon-image {
 
-    width: 80px;
+    width: 88px;
 
-    height: 80px;
+    height: 88px;
 
-    flex: 0 0 80px;
+    flex: 0 0 88px;
 
     object-fit: contain;
 
@@ -810,18 +815,17 @@ img {
 
 }
 
+.stat-item > div {
+
+    flex: 1 1 0;
+
+    min-width: 0;
+
+}
 
 .stat-item:nth-child(-n + 2) > .stat-icon-image {
 
-    width: 100px;
-
-    height: 100px;
-
-    flex-basis: 100px;
-
     object-fit: cover;
-
-    transform: scale(1.06);
 
 }
 
@@ -2252,23 +2256,84 @@ img {
 }
 
 .jefe-admin-stats-card {
-    border: 1px solid #e5eaf0;
-    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #fff;
 }
 
 .jefe-admin-stats-card .card-body {
-    padding: 24px;
+    padding: clamp(20px, 3vw, 32px);
 }
 
-.jefe-admin-stats-card h3 {
-    font-weight: 750;
+.jefe-admin-stats-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.jefe-admin-stats-icon {
+    display: inline-flex;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    font-size: 20px;
+}
+
+.jefe-admin-stats-clients {
+    border-top: 4px solid #2563eb;
+}
+
+.jefe-admin-stats-clients .jefe-admin-stats-icon {
+    color: #1d4ed8;
+    background: #eff6ff;
+}
+
+.jefe-admin-stats-workers {
+    border-top: 4px solid #0f766e;
+}
+
+.jefe-admin-stats-workers .jefe-admin-stats-icon {
+    color: #0f766e;
+    background: #ecfdf5;
+}
+
+.jefe-admin-stats-kicker {
+    display: block;
+    margin-bottom: 4px;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+}
+
+.jefe-admin-stats-heading h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: clamp(20px, 2.5vw, 24px);
+    font-weight: 800;
+}
+
+.jefe-admin-stats-heading p {
+    margin: 5px 0 0;
+    color: #64748b;
+}
+
+.jefe-admin-stats-list {
+    border-top: 1px solid #edf1f5;
 }
 
 .jefe-admin-stat-row {
     display: flex;
+    min-height: 62px;
+    align-items: center;
     justify-content: space-between;
+    padding: 10px 4px;
     gap: 16px;
-    padding: 12px 0;
     border-bottom: 1px solid #edf1f5;
 }
 
@@ -2276,9 +2341,59 @@ img {
     border-bottom: 0;
 }
 
-.jefe-admin-stat-row strong {
+.jefe-admin-stat-person {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+    color: #1e293b;
+    font-weight: 650;
+}
+
+.jefe-admin-stat-rank {
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    color: #475569;
+    background: #f1f5f9;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.jefe-admin-stats-clients .jefe-admin-stat-row:first-child .jefe-admin-stat-rank {
+    color: #1d4ed8;
+    background: #dbeafe;
+}
+
+.jefe-admin-stats-workers .jefe-admin-stat-row:first-child .jefe-admin-stat-rank {
+    color: #0f766e;
+    background: #ccfbf1;
+}
+
+.jefe-admin-stat-value {
     flex-shrink: 0;
+    padding: 7px 12px;
+    border-radius: 999px;
     color: #123c64;
+    background: #f1f5f9;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.jefe-admin-stat-value span {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.jefe-admin-stats-empty {
+    margin: 0;
+    padding: 18px 4px 4px;
+    color: #64748b;
 }
 
 .jefe-admin-primary-action {
@@ -2636,6 +2751,307 @@ img {
     min-width: 980px;
 }
 
+.secretario-turnos-page {
+    --secretario-ink: #102b45;
+}
+
+.secretario-turnos-toolbar,
+.secretario-turnos-search {
+    border-color: #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+}
+
+.secretario-turnos-toolbar {
+    padding: 18px 20px;
+}
+
+.secretario-turnos-toolbar p {
+    color: var(--secretario-ink);
+}
+
+.secretario-turnos-toolbar .btn {
+    min-height: 42px;
+    padding-inline: 16px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.secretario-turnos-search {
+    padding: 18px;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+
+.secretario-turnos-search .form-control {
+    min-height: 44px;
+    border-color: #d7e0ea;
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+.secretario-turnos-search .form-control:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, .12);
+}
+
+.secretario-turnos-search .btn {
+    min-height: 44px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.secretario-turnos-table-wrap {
+    overflow: hidden;
+    border: 1px solid #dfe7ef;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, .08);
+}
+
+.secretario-turnos-hint {
+    padding: 10px 16px;
+    border-bottom: 1px solid #e8edf3;
+    color: #64748b;
+    background: #f8fafc;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.secretario-turnos-hint i {
+    color: #2563eb;
+}
+
+.secretario-turnos-scroll {
+    max-height: min(68vh, 760px);
+    overflow: auto;
+    scrollbar-color: #9aacc0 #eef2f6;
+    scrollbar-width: thin;
+}
+
+.secretario-turnos-table {
+    min-width: 1450px;
+    margin: 0;
+    border-color: #edf1f5;
+}
+
+.secretario-turnos-table thead th {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    padding: 15px 13px;
+    border: 0;
+    color: #fff;
+    background: linear-gradient(120deg, #102b45, #17466c);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.secretario-turnos-table tbody td {
+    padding: 15px 13px;
+    border-color: #edf1f5;
+    color: #334155;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.secretario-turnos-table tbody tr:nth-child(even) > * {
+    background-color: #f8fafc;
+}
+
+.secretario-turnos-table tbody tr:hover > * {
+    background-color: #eef6ff;
+}
+
+.secretario-turnos-table tbody td:first-child {
+    min-width: 145px;
+    color: #172b42;
+    font-weight: 750;
+}
+
+.secretario-turnos-table tbody td:nth-child(6) {
+    color: #102b45;
+    font-weight: 750;
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+
+.secretario-turnos-table tbody td:nth-child(9) {
+    min-width: 135px;
+    white-space: nowrap;
+}
+
+.secretario-turnos-table .secretario-turno-status {
+    padding: 7px 10px;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8 !important;
+    background: #eff6ff !important;
+    font-size: 11px;
+    font-weight: 750;
+}
+
+.secretario-turnos-table .secretario-turno-status-reparacion,
+.secretario-turnos-table .secretario-turno-status-diagnostico {
+    border-color: #c4b5fd;
+    color: #6d28d9 !important;
+    background: #f5f3ff !important;
+}
+
+.secretario-turnos-table .secretario-turno-status-finalizado,
+.secretario-turnos-table .secretario-turno-status-entregado,
+.secretario-turnos-table .secretario-turno-status-presupuesto_aceptado {
+    border-color: #a7f3d0;
+    color: #047857 !important;
+    background: #ecfdf5 !important;
+}
+
+.secretario-turnos-table .secretario-turno-status-esperando_repuesto,
+.secretario-turnos-table .secretario-turno-status-presupuesto_pendiente {
+    border-color: #fde68a;
+    color: #a16207 !important;
+    background: #fffbeb !important;
+}
+
+.secretario-turnos-table .secretario-turno-status-cancelado,
+.secretario-turnos-table .secretario-turno-status-presupuesto_rechazado {
+    border-color: #fecaca;
+    color: #b91c1c !important;
+    background: #fef2f2 !important;
+}
+
+.secretario-turno-actions {
+    min-width: 205px;
+    white-space: nowrap;
+}
+
+.secretario-turno-actions .btn {
+    margin: 2px;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.secretario-trabajos-page {
+    --secretario-ink: #102b45;
+}
+
+.secretario-trabajos-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 11px 15px;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    color: #1e3a5f !important;
+    background: #eff6ff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.secretario-trabajos-count i {
+    color: #2563eb;
+}
+
+.secretario-trabajos-table-wrap {
+    max-height: min(68vh, 760px);
+    overflow: auto;
+    border-color: #dfe7ef;
+    border-radius: 16px;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, .08);
+    scrollbar-color: #9aacc0 #eef2f6;
+    scrollbar-width: thin;
+}
+
+.secretario-trabajos-table {
+    min-width: 1050px;
+}
+
+.secretario-trabajos-table thead th {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    padding: 15px 14px;
+    color: #fff;
+    background: linear-gradient(120deg, #102b45, #17466c);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.secretario-trabajos-table tbody td {
+    padding: 15px 14px;
+    border-color: #edf1f5;
+    color: #334155;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.secretario-trabajos-table tbody tr:nth-child(even) > * {
+    background: #f8fafc;
+}
+
+.secretario-trabajos-table tbody tr:hover > * {
+    background: #eef6ff;
+}
+
+.secretario-trabajos-date {
+    display: inline-block;
+    padding: 6px 9px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    color: #1d4ed8;
+    background: #eff6ff;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.secretario-trabajos-client,
+.secretario-trabajos-vehicle {
+    color: #172b42 !important;
+    font-weight: 700;
+}
+
+.secretario-trabajos-vehicle {
+    min-width: 210px;
+}
+
+.secretario-trabajos-description {
+    min-width: 280px;
+    max-width: 420px;
+    color: #64748b !important;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 575.98px) {
+    .secretario-turnos-toolbar,
+    .secretario-turnos-search {
+        padding: 14px;
+        border-radius: 13px;
+    }
+
+    .secretario-turnos-toolbar .btn {
+        width: 100%;
+    }
+
+    .secretario-turnos-scroll {
+        max-height: 65vh;
+    }
+
+    .secretario-trabajos-count {
+        width: 100%;
+    }
+
+    .secretario-trabajos-table-wrap {
+        max-height: 65vh;
+    }
+}
+
 .jefe-admin-form-card {
     overflow: hidden;
     border: 1px solid #e6ebf1;
@@ -2651,6 +3067,202 @@ img {
 
 .jefe-admin-form-card > .card-body {
     padding: 28px;
+}
+
+.jefe-presupuesto-form-card {
+    border-color: #dbe5ef;
+    border-radius: 20px;
+    box-shadow: 0 18px 48px rgba(7, 24, 39, 0.1) !important;
+}
+
+.jefe-presupuesto-form-card .jefe-admin-card-header {
+    padding: 30px 34px;
+    background:
+        radial-gradient(circle at 88% 18%, rgba(96, 165, 250, 0.3), transparent 28%),
+        linear-gradient(120deg, #071827, #123c64);
+}
+
+.jefe-budget-eyebrow {
+    display: block;
+    margin-bottom: 9px;
+    color: #bfdbfe;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+}
+
+.jefe-presupuesto-form-card .jefe-admin-card-header p {
+    max-width: 680px;
+    color: rgba(255, 255, 255, 0.76) !important;
+}
+
+.jefe-presupuesto-form-card > .card-body {
+    padding: 32px 34px;
+}
+
+.jefe-budget-intro {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding: 18px 20px;
+    border: 1px solid #dbeafe;
+    border-radius: 15px;
+    background: linear-gradient(110deg, #f4f8ff, #fff);
+}
+
+.jefe-budget-intro-icon {
+    display: inline-flex;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    color: #1d4ed8;
+    background: #dbeafe;
+    font-size: 1.15rem;
+}
+
+.jefe-budget-intro p,
+.jefe-budget-section-heading p {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.jefe-budget-section {
+    margin-top: 24px;
+    padding: 23px;
+    border: 1px solid #e6ebf1;
+    border-radius: 16px;
+    background: #fff;
+}
+
+.jefe-budget-section-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    margin-bottom: 20px;
+}
+
+.jefe-budget-section-number {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    color: #1d4ed8;
+    background: #eff6ff;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.jefe-budget-section-heading h2 {
+    margin: 0 0 4px;
+    color: #10243a;
+    font-size: 1.05rem;
+    font-weight: 750;
+}
+
+.jefe-budget-section-heading p {
+    margin: 0;
+}
+
+.jefe-budget-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 20px;
+}
+
+.jefe-budget-field-wide {
+    grid-column: 1 / -1;
+}
+
+.jefe-budget-field .form-control,
+.jefe-budget-field .form-select,
+.jefe-used-part-field .form-control {
+    min-height: 46px;
+    border-color: #d8e1eb;
+    border-radius: 10px;
+}
+
+.jefe-budget-field textarea.form-control {
+    min-height: 108px;
+}
+
+.jefe-budget-field .form-control:focus,
+.jefe-budget-field .form-select:focus,
+.jefe-used-part-field .form-control:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.13);
+}
+
+.jefe-budget-field-checkbox {
+    grid-column: 1 / -1;
+    padding-top: 4px;
+}
+
+.jefe-used-parts-section {
+    border-color: #cfe0f4;
+    background: #fbfdff;
+}
+
+.jefe-used-parts-section .jefe-budget-section-number {
+    color: #047857;
+    background: #d1fae5;
+}
+
+.jefe-used-parts-list {
+    display: grid;
+    gap: 12px;
+}
+
+.jefe-used-part-row {
+    padding: 17px;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    background: #fff;
+}
+
+.jefe-used-part-fields {
+    display: grid;
+    grid-template-columns: minmax(220px, 2fr) minmax(90px, 0.7fr) minmax(140px, 1fr) auto;
+    align-items: end;
+    gap: 14px;
+}
+
+.jefe-used-part-field .form-label {
+    margin-bottom: 7px;
+    color: #334155;
+    font-size: 0.83rem;
+}
+
+.jefe-used-part-delete {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 4px 12px;
+    color: #b91c1c;
+    font-size: 0.82rem;
+}
+
+.jefe-used-part-delete input {
+    accent-color: #dc2626;
+}
+
+.jefe-add-used-part {
+    margin-top: 14px;
+    border-radius: 10px;
+    font-weight: 650;
+}
+
+.jefe-budget-save {
+    min-width: 150px;
+    padding: 11px 20px;
+    border-radius: 10px;
+    font-weight: 700;
 }
 
 .jefe-status-field {
@@ -2691,6 +3303,31 @@ img {
     padding: 8px 11px;
     font-size: 11px;
     font-weight: 700;
+}
+
+@media (max-width: 767.98px) {
+    .jefe-presupuesto-form-card .jefe-admin-card-header,
+    .jefe-presupuesto-form-card > .card-body {
+        padding: 22px 18px;
+    }
+
+    .jefe-budget-section {
+        padding: 18px 15px;
+    }
+
+    .jefe-budget-fields,
+    .jefe-used-part-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .jefe-budget-field-wide,
+    .jefe-budget-field-checkbox {
+        grid-column: auto;
+    }
+
+    .jefe-used-part-delete {
+        padding-bottom: 0;
+    }
 }
 
 /* =========================================================
@@ -2866,6 +3503,20 @@ img {
 .secretary-dashboard-card-appointments .secretary-dashboard-card-icon {
     color: #0891b2;
     background: #ecfeff;
+}
+
+.secretary-dashboard-card-statistics .secretary-dashboard-card-icon {
+    color: #0f766e;
+    background: #ecfdf5;
+}
+
+.secretary-dashboard-card-statistics:hover,
+.secretary-dashboard-card-statistics:focus-visible {
+    border-color: #99f6e4;
+}
+
+.secretary-dashboard-card-statistics .secretary-dashboard-card-link {
+    color: #0f766e;
 }
 
 .secretary-dashboard-card-number {
@@ -3939,13 +4590,14 @@ img {
     .hero-features {
 
         display: block;
-
+ 
     }
 
 
     .hero-features div {
 
         margin-bottom: 8px;
+
 
     }
 
@@ -3988,16 +4640,13 @@ img {
 
     .stat-item:nth-child(-n + 2) > .stat-icon-image {
 
-        flex-basis: 68px;
+        flex-basis: 60px;
 
-        width: 68px;
+        width: 60px;
 
-        height: 68px;
-
-        transform: scale(1.04);
+        height: 60px;
 
     }
-
 
     .services-section,
     .about-section,
@@ -4357,7 +5006,7 @@ img {
 
         grid-template-columns: repeat(2, minmax(0, 1fr));
 
-        transform: translateY(-22px);
+        transform: translateY(0);
 
     }
 
@@ -4387,13 +5036,11 @@ img {
 
     .stat-item:nth-child(-n + 2) > .stat-icon-image {
 
-        flex-basis: 52px;
+        flex-basis: 44px;
 
-        width: 52px;
+        width: 44px;
 
-        height: 52px;
-
-        transform: scale(1.03);
+        height: 44px;
 
     }
 

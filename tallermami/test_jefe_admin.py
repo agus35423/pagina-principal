@@ -20,6 +20,8 @@ from .models import (
     OrdenTrabajo,
     OfertaTurno,
     PerfilUsuario,
+    Presupuesto,
+    RepuestoUtilizado,
     Trabajador,
     Trabajo,
     TrabajoRealizado,
@@ -252,6 +254,69 @@ class AdministracionJefeTallerTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'name="marca"')
         self.assertContains(response, '<select name="anio"', html=False)
+
+    def test_formulario_presupuesto_agrega_y_edita_repuestos_utilizados(self):
+        trabajo = Trabajo.objects.create(nombre="Mantenimiento")
+        turno = Turno.objects.create(
+            vehiculo="Ford Focus (2018)",
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="AB123CD",
+            servicio=trabajo,
+            fecha_turno=timezone.now() + timedelta(days=3),
+        )
+        nuevo_url = reverse(
+            "jefe_admin_nuevo",
+            args=["tallermami", "presupuesto"],
+        )
+
+        formulario = self.client.get(nuevo_url)
+
+        self.assertEqual(formulario.status_code, 200)
+        self.assertContains(formulario, "Repuestos utilizados")
+        self.assertContains(formulario, "Agregar otro repuesto")
+
+        respuesta = self.client.post(
+            nuevo_url,
+            {
+                "turno": str(turno.pk),
+                "estado": "pendiente",
+                "mano_obra_estimada": "1200.00",
+                "observaciones": "Revisión general",
+                "mano_obra_final": "0.00",
+                "detalle_final": "",
+                "repuestos_utilizados-TOTAL_FORMS": "1",
+                "repuestos_utilizados-INITIAL_FORMS": "0",
+                "repuestos_utilizados-MIN_NUM_FORMS": "0",
+                "repuestos_utilizados-MAX_NUM_FORMS": "1000",
+                "repuestos_utilizados-0-nombre": "Filtro de aceite",
+                "repuestos_utilizados-0-cantidad": "1",
+                "repuestos_utilizados-0-precio_unitario": "230.50",
+            },
+        )
+
+        self.assertRedirects(
+            respuesta,
+            reverse(
+                "jefe_admin_lista",
+                args=["tallermami", "presupuesto"],
+            ),
+        )
+        presupuesto = Presupuesto.objects.get(turno=turno)
+        repuesto = RepuestoUtilizado.objects.get(presupuesto=presupuesto)
+        self.assertEqual(repuesto.nombre, "Filtro de aceite")
+        self.assertEqual(repuesto.cantidad, 1)
+        self.assertEqual(repuesto.precio_unitario, 230.50)
+
+        editar_url = reverse(
+            "jefe_admin_editar",
+            args=["tallermami", "presupuesto", presupuesto.pk],
+        )
+        edicion = self.client.get(editar_url)
+
+        self.assertEqual(edicion.status_code, 200)
+        self.assertContains(edicion, "Filtro de aceite")
 
     def test_jefe_puede_cambiar_estado_del_turno_desde_edicion(self):
         trabajo = Trabajo.objects.create(nombre="Revisión")
@@ -971,6 +1036,68 @@ class WhatsAppTests(TestCase):
 
 
 class PanelSecretarioTests(TestCase):
+    def test_secretario_crea_presupuesto_con_repuestos_estimados_y_utilizados(self):
+        secretaria = get_user_model().objects.create_user(
+            username="secretaria_presupuesto",
+        )
+        secretaria.groups.add(Group.objects.create(name="Secretario"))
+        servicio = Trabajo.objects.create(nombre="Mantenimiento")
+        turno = Turno.objects.create(
+            vehiculo="Ford Focus (2018)",
+            marca="Ford",
+            modelo="Focus",
+            anio=2018,
+            patente="AB123CD",
+            servicio=servicio,
+            fecha_turno=timezone.now() + timedelta(days=2),
+        )
+        self.client.force_login(secretaria)
+
+        formulario = self.client.get(
+            reverse("secretario_presupuesto_nuevo")
+        )
+
+        self.assertEqual(formulario.status_code, 200)
+        self.assertContains(formulario, "Repuestos presupuestados")
+        self.assertContains(formulario, "Repuestos utilizados")
+        self.assertContains(formulario, "Agregar repuesto utilizado")
+
+        respuesta = self.client.post(
+            reverse("secretario_presupuesto_nuevo"),
+            {
+                "turno": str(turno.pk),
+                "mano_obra_estimada": "1200.00",
+                "observaciones": "Servicio completo",
+                "repuestos_estimados-TOTAL_FORMS": "1",
+                "repuestos_estimados-INITIAL_FORMS": "0",
+                "repuestos_estimados-MIN_NUM_FORMS": "0",
+                "repuestos_estimados-MAX_NUM_FORMS": "1000",
+                "repuestos_estimados-0-nombre": "Filtro de aire",
+                "repuestos_estimados-0-cantidad": "1",
+                "repuestos_estimados-0-precio_unitario": "150.00",
+                "repuestos_utilizados-TOTAL_FORMS": "1",
+                "repuestos_utilizados-INITIAL_FORMS": "0",
+                "repuestos_utilizados-MIN_NUM_FORMS": "0",
+                "repuestos_utilizados-MAX_NUM_FORMS": "1000",
+                "repuestos_utilizados-0-nombre": "Bujía",
+                "repuestos_utilizados-0-cantidad": "4",
+                "repuestos_utilizados-0-precio_unitario": "80.00",
+            },
+        )
+
+        self.assertRedirects(
+            respuesta,
+            reverse("secretario_presupuestos"),
+        )
+        presupuesto = Presupuesto.objects.get(turno=turno)
+        self.assertEqual(
+            presupuesto.repuestos_estimados.get().nombre,
+            "Filtro de aire",
+        )
+        repuesto_utilizado = presupuesto.repuestos_utilizados.get()
+        self.assertEqual(repuesto_utilizado.nombre, "Bujía")
+        self.assertEqual(repuesto_utilizado.cantidad, 4)
+
     def test_panel_muestra_accesos_de_gestion_con_nueva_presentacion(self):
         secretaria = get_user_model().objects.create_user(
             username="secretaria_panel",
