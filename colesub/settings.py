@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 # ==========================================================
 # RUTA PRINCIPAL
@@ -225,9 +226,31 @@ EMAIL_HOST_PASSWORD = os.environ.get(
     ""
 )
 
+GMAIL_OAUTH_CLIENT_ID = os.environ.get("GMAIL_OAUTH_CLIENT_ID", "")
+GMAIL_OAUTH_CLIENT_SECRET = os.environ.get("GMAIL_OAUTH_CLIENT_SECRET", "")
+GMAIL_OAUTH_REFRESH_TOKEN = os.environ.get("GMAIL_OAUTH_REFRESH_TOKEN", "")
+
+gmail_oauth_credentials = (
+    GMAIL_OAUTH_CLIENT_ID,
+    GMAIL_OAUTH_CLIENT_SECRET,
+    GMAIL_OAUTH_REFRESH_TOKEN,
+)
+if any(gmail_oauth_credentials) and not all(gmail_oauth_credentials):
+    raise ImproperlyConfigured(
+        "Configurá GMAIL_OAUTH_CLIENT_ID, GMAIL_OAUTH_CLIENT_SECRET y "
+        "GMAIL_OAUTH_REFRESH_TOKEN juntos."
+    )
+if all(gmail_oauth_credentials) and not EMAIL_HOST_USER:
+    raise ImproperlyConfigured(
+        "Configurá EMAIL_HOST_USER con la cuenta de Gmail autorizada."
+    )
+
 EMAIL_BACKEND = os.environ.get(
     "EMAIL_BACKEND",
     (
+        "tallermami.email_backends.GmailApiEmailBackend"
+        if all(gmail_oauth_credentials)
+        else
         "django.core.mail.backends.smtp.EmailBackend"
         if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD
         else "django.core.mail.backends.console.EmailBackend"
@@ -235,6 +258,13 @@ EMAIL_BACKEND = os.environ.get(
         else "django.core.mail.backends.smtp.EmailBackend"
     ),
 )
+if (
+    EMAIL_BACKEND == "tallermami.email_backends.GmailApiEmailBackend"
+    and not all(gmail_oauth_credentials)
+):
+    raise ImproperlyConfigured(
+        "El backend de Gmail API requiere las tres variables GMAIL_OAUTH_*."
+    )
 
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
 
